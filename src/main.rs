@@ -11,9 +11,7 @@ async fn main() {
 
 fn read_command() -> String {
     print!("> ");
-
-    // ignore error
-    let _ = io::stdout().flush().unwrap();
+    io::stdout().flush().expect("could not flush stdout");
 
     let mut command = String::new();
 
