@@ -46,7 +46,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     while let Some(message) = rx.recv().await {
         match message {
-            Message::UserInput { command } => {
+            Message::UserInput {
+                command,
+                oneshot_tx,
+            } => {
                 let app = argument::get_app();
                 let input = command.split_whitespace();
                 let matches = app.get_matches_from(input);
@@ -90,7 +93,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 work_time,
                 break_time,
             } => {
-                let id = get_new_id(&mut id_manager);
                 db::create_notification(&mut glue, &Notification::new(id, work_time, break_time))
                     .await;
 
