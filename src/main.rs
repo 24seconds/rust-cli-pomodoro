@@ -143,8 +143,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 for (id, handle) in hash_map.iter() {
                     handle.abort();
-                    db::delete_notification(&mut glue, *id).await;
                 }
+                db::delete_all_notification(&mut glue).await;
 
                 println!("Message::DeleteAll done");
                 let _ = oneshot_tx.send(true);

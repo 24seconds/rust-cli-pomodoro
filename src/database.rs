@@ -89,3 +89,14 @@ pub async fn delete_notification(glue: &mut Glue<Key, MemoryStorage>, id: u16) {
     let output = glue.execute_async(sql.as_str()).await.unwrap();
     println!("output: {:?}", output);
 }
+
+pub async fn delete_all_notification(glue: &mut Glue<Key, MemoryStorage>) {
+    let sql = r#"
+        DELETE FROM notifications;
+    "#;
+
+    println!("delete sql: {}", sql);
+
+    let output = glue.execute_async(sql).await.unwrap();
+    println!("output: {:?}", output);
+}
