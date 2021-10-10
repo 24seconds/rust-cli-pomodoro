@@ -1,6 +1,5 @@
 use clap::{App, AppSettings, Arg, SubCommand};
 
-
 pub fn get_app() -> App<'static, 'static> {
     App::new("pomodoro")
         .setting(AppSettings::NoBinaryName)
