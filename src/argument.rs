@@ -6,6 +6,8 @@ pub const CREATE: &str = "create";
 pub const DELETE: &str = "delete";
 pub const LIST: &str = "list";
 pub const LS: &str = "ls";
+pub const DEFAULT_WORK_TIME: u16 = 25;
+pub const DEFAULT_BREAK_TIME: u16 = 5;
 
 pub fn get_app() -> App<'static, 'static> {
     App::new("pomodoro")
@@ -29,6 +31,14 @@ pub fn get_app() -> App<'static, 'static> {
                         .takes_value(true)
                         .short("b")
                         .long("b"),
+                )
+                .arg(
+                    Arg::with_name("default")
+                        .help("The flag to create default notification, 25 mins work and 5 min break")
+                        .conflicts_with("work")
+                        .conflicts_with("break")
+                        .short("d")
+                        .long("default")
                 ), // TODO(young): add default argument.
             // TODO(young): Check is possible to detect
             // TODO(young): if default arg is specified then other args should not be specified.
