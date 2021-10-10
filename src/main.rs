@@ -57,15 +57,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         let break_time = parse_arg::<u16>(sub_matches, "break")?;
 
                         let id = get_new_id(&mut id_manager);
-                        db::create_notification(
-                            &mut glue,
-                            &Notification::new(id, work_time, break_time),
-                        )
-                        .await;
-
+                        
                         let tx = tx.clone();
-                        let handle = spawn_notification(tx, id, work_time, break_time);
-                        hash_map.insert(id, handle);
+                        let _ = tx.send(Message::Create { id, work_time, break_time }).await;
                     }
                     (DELETE, Some(sub_matches)) => {
                         if sub_matches.is_present("id") {
@@ -90,6 +84,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     }
                     _ => {}
                 }
+            }
+            Message::Create {
+                id,
+                work_time,
+                break_time,
+            } => {
+                let id = get_new_id(&mut id_manager);
+                db::create_notification(&mut glue, &Notification::new(id, work_time, break_time))
+                    .await;
+
+                let tx = tx.clone();
+                let handle = spawn_notification(tx, id, work_time, break_time);
+                hash_map.insert(id, handle);
             }
             Message::Delete { id } => {
                 println!("Message::Delete called! {}", id);
