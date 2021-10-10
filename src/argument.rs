@@ -34,11 +34,13 @@ pub fn get_app() -> App<'static, 'static> {
                 )
                 .arg(
                     Arg::with_name("default")
-                        .help("The flag to create default notification, 25 mins work and 5 min break")
+                        .help(
+                            "The flag to create default notification, 25 mins work and 5 min break",
+                        )
                         .conflicts_with("work")
                         .conflicts_with("break")
                         .short("d")
-                        .long("default")
+                        .long("default"),
                 ), // TODO(young): add default argument.
             // TODO(young): Check is possible to detect
             // TODO(young): if default arg is specified then other args should not be specified.

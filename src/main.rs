@@ -1,7 +1,9 @@
+use gluesql::{memory_storage::Key, Glue, MemoryStorage};
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{self, Write};
 use tokio::sync::mpsc::{self, Sender};
+use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, sleep_until, Duration};
 
@@ -11,7 +13,7 @@ mod message;
 mod notification;
 use database as db;
 
-use crate::argument::{parse_arg, CREATE, DELETE, LIST, LS};
+use crate::argument::{parse_arg, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, LIST, LS};
 use crate::message::Message;
 use crate::notification::Notification;
 
@@ -40,7 +42,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             t += 1;
             println!("user input: {}", &command);
 
-            let _ = tx_for_command.send(Message::UserInput { command }).await;
+            let (oneshot_tx, oneshot_rx) = oneshot::channel::<bool>();
+
+            let _ = tx_for_command
+                .send(Message::UserInput {
+                    command,
+                    oneshot_tx,
+                })
+                .await;
+
+            oneshot_rx.await.unwrap();
         }
     });
 
@@ -56,13 +67,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 match matches.subcommand() {
                     (CREATE, Some(sub_matches)) => {
-                        let work_time = parse_arg::<u16>(sub_matches, "work")?;
-                        let break_time = parse_arg::<u16>(sub_matches, "break")?;
+                        let (work_time, break_time) = if sub_matches.is_present("default") {
+                            (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
+                        } else {
+                            let work_time = parse_arg::<u16>(sub_matches, "work")?;
+                            let break_time = parse_arg::<u16>(sub_matches, "break")?;
+
+                            (work_time, break_time)
+                        };
 
                         let id = get_new_id(&mut id_manager);
-                        
+
                         let tx = tx.clone();
-                        let _ = tx.send(Message::Create { id, work_time, break_time }).await;
+                        let _ = tx
+                            .send(Message::Create {
+                                id,
+                                work_time,
+                                break_time,
+                                oneshot_tx,
+                            })
+                            .await;
                     }
                     (DELETE, Some(sub_matches)) => {
                         if sub_matches.is_present("id") {
@@ -70,20 +94,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             let id = parse_arg::<u16>(sub_matches, "id")?;
 
                             let tx = tx.clone();
-                            let _ = tx.send(Message::Delete { id }).await;
+                            let _ = tx.send(Message::Delete { id, oneshot_tx }).await;
                         } else {
                             // delete all
                             let tx = tx.clone();
-                            let _ = tx.send(Message::DeleteAll).await;
+                            let _ = tx.send(Message::DeleteAll { oneshot_tx }).await;
                         }
                     }
                     (LIST, Some(_)) => {
                         let tx = tx.clone();
-                        let _ = tx.send(Message::Query).await;
+                        let _ = tx.send(Message::Query { oneshot_tx }).await;
                     }
                     (LS, Some(_)) => {
                         let tx = tx.clone();
-                        let _ = tx.send(Message::Query).await;
+                        let _ = tx.send(Message::Query { oneshot_tx }).await;
                     }
                     _ => {}
                 }
@@ -92,6 +116,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 id,
                 work_time,
                 break_time,
+                oneshot_tx,
             } => {
                 db::create_notification(&mut glue, &Notification::new(id, work_time, break_time))
                     .await;
@@ -99,24 +124,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let tx = tx.clone();
                 let handle = spawn_notification(tx, id, work_time, break_time);
                 hash_map.insert(id, handle);
+
+                let _ = oneshot_tx.send(true);
             }
-            Message::Delete { id } => {
+            Message::Delete { id, oneshot_tx } => {
                 println!("Message::Delete called! {}", id);
 
-                hash_map
-                    .get(&id)
-                    .ok_or(format!("failed to corresponding task (id: {})", &id))?
-                    .abort();
-
-                hash_map
-                    .remove(&id)
-                    .ok_or(format!("failed to revmoe id ({})", id))?;
-
-                db::delete_notification(&mut glue, id).await;
+                delete_notification(id, &mut hash_map, &mut glue).await?;
 
                 println!("Message::Delete done");
+                let _ = oneshot_tx.send(true);
             }
-            Message::DeleteAll => {
+            Message::SilentDelete { id } => {
+                delete_notification(id, &mut hash_map, &mut glue).await?;
+            }
+            Message::DeleteAll { oneshot_tx } => {
                 println!("Message:DeleteAll called!");
 
                 for (id, handle) in hash_map.iter() {
@@ -125,13 +147,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 println!("Message::DeleteAll done");
+                let _ = oneshot_tx.send(true);
             }
-            Message::Query => {
+            Message::Query { oneshot_tx } => {
                 println!("Message::Query called!");
 
                 db::list_notification(&mut glue).await;
 
                 println!("Message::Query done");
+                let _ = oneshot_tx.send(true);
             }
             _ => {
                 panic!("no such message type!");
@@ -170,6 +194,25 @@ fn read_command(t: i32) -> String {
     }
 }
 
+async fn delete_notification(
+    id: u16,
+    hash_map: &mut HashMap<u16, JoinHandle<()>>,
+    glue: &mut Glue<Key, MemoryStorage>,
+) -> Result<(), Box<dyn Error>> {
+    hash_map
+        .get(&id)
+        .ok_or(format!("failed to corresponding task (id: {})", &id))?
+        .abort();
+
+    hash_map
+        .remove(&id)
+        .ok_or(format!("failed to revmoe id ({})", id))?;
+
+    db::delete_notification(glue, id).await;
+
+    Ok(())
+}
+
 fn spawn_notification(
     tx: Sender<Message>,
     id: u16,
@@ -189,7 +232,7 @@ fn spawn_notification(
         sleep(bt).await;
         println!("id ({}), break time ({}) done", id, break_time);
 
-        let _ = tx.send(Message::Delete { id }).await;
+        let _ = tx.send(Message::SilentDelete { id }).await;
 
         println!("id: {}, notification work time done!", id);
     })
