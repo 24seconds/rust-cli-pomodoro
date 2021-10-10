@@ -1,7 +1,7 @@
 use chrono::SecondsFormat;
 use gluesql::{memory_storage::Key, Glue, MemoryStorage};
 
-use crate::notification::Notification;
+use crate::{notification::Notification};
 
 pub fn get_memory_glue() -> Glue<Key, MemoryStorage> {
     let storage = MemoryStorage::default();
@@ -62,5 +62,19 @@ pub async fn list_notification(glue: &mut Glue<Key, MemoryStorage>) {
     let sql = "SELECT * FROM notifications;";
 
     let output = glue.execute_async(sql).await.unwrap();
+    println!("output: {:?}", output);
+}
+
+pub async fn delete_notification(glue: &mut Glue<Key, MemoryStorage>, id: u16) {
+    let sql = format!(
+        r#"
+        DELETE FROM notifications WHERE id = {};
+        "#,
+        id
+    );
+
+    println!("delete sql: {}", sql);
+
+    let output = glue.execute_async(sql.as_str()).await.unwrap();
     println!("output: {:?}", output);
 }

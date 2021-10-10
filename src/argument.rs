@@ -1,4 +1,6 @@
-use clap::{App, AppSettings, Arg, SubCommand};
+use std::{error::Error, str::FromStr};
+
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
 pub fn get_app() -> App<'static, 'static> {
     App::new("pomodoro")
@@ -26,4 +28,19 @@ pub fn get_app() -> App<'static, 'static> {
                    // TODO(young): Check is possible to detect
                    // TODO(young): if default arg is specified then other args should not be specified.
         ])
+}
+
+pub fn parse_arg<C>(arg_matches: &ArgMatches, arg_name: &str) -> Result<C, Box<dyn Error>>
+where
+    C: FromStr,
+{
+    let str = arg_matches
+        .value_of(arg_name)
+        .ok_or(format!("failed to get ({}) from cli", arg_name))?;
+
+    let parsed = str
+        .parse::<C>()
+        .map_err(|_| format!("failed to parse arg ({})", str))?;
+
+    Ok(parsed)
 }

@@ -38,4 +38,8 @@ impl Notification {
             self.break_expired_at,
         )
     }
+
+    pub fn get_id(&self) -> u16 {
+        self.id
+    }
 }
