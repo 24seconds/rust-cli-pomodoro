@@ -2,6 +2,11 @@ use std::{error::Error, str::FromStr};
 
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
+pub const CREATE: &str = "create";
+pub const DELETE: &str = "delete";
+pub const LIST: &str = "list";
+pub const LS: &str = "ls";
+
 pub fn get_app() -> App<'static, 'static> {
     App::new("pomodoro")
         .setting(AppSettings::NoBinaryName)
@@ -25,8 +30,26 @@ pub fn get_app() -> App<'static, 'static> {
                         .short("b")
                         .long("b"),
                 ), // TODO(young): add default argument.
-                   // TODO(young): Check is possible to detect
-                   // TODO(young): if default arg is specified then other args should not be specified.
+            // TODO(young): Check is possible to detect
+            // TODO(young): if default arg is specified then other args should not be specified.
+            SubCommand::with_name("delete")
+                .about("delete a notification")
+                .arg(
+                    Arg::with_name("id")
+                        .help("The ID of notification to delete")
+                        .takes_value(true)
+                        .conflicts_with("all")
+                        .short("i")
+                        .long("id"),
+                )
+                .arg(
+                    Arg::with_name("all")
+                        .help("The flag to delete all notifications")
+                        .short("a")
+                        .long("all"),
+                ),
+            SubCommand::with_name("list").about("list notifications long command"),
+            SubCommand::with_name("ls").about("list notifications short command"),
         ])
 }
 

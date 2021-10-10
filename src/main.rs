@@ -11,7 +11,7 @@ mod message;
 mod notification;
 use database as db;
 
-use crate::argument::parse_arg;
+use crate::argument::{parse_arg, CREATE, DELETE, LIST, LS};
 use crate::message::Message;
 use crate::notification::Notification;
 
@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let tx_for_command = tx.clone();
     tokio::spawn(async move {
-        let mut t = 0;
+        let mut t = 1;
 
         loop {
             println!("inside spawn blocking");
@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let matches = app.get_matches_from(input);
 
                 match matches.subcommand() {
-                    ("create", Some(sub_matches)) => {
+                    (CREATE, Some(sub_matches)) => {
                         let work_time = parse_arg::<u16>(sub_matches, "work")?;
                         let break_time = parse_arg::<u16>(sub_matches, "break")?;
 
@@ -66,6 +66,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         let tx = tx.clone();
                         let handle = spawn_notification(tx, id, work_time, break_time);
                         hash_map.insert(id, handle);
+                    }
+                    (DELETE, Some(sub_matches)) => {
+                        if sub_matches.is_present("id") {
+                            // delete one
+                            let id = parse_arg::<u16>(sub_matches, "id")?;
+
+                            let tx = tx.clone();
+                            let _ = tx.send(Message::Delete { id }).await;
+                        } else {
+                            // delete all
+                            let tx = tx.clone();
+                            let _ = tx.send(Message::DeleteAll).await;
+                        }
+                    }
+                    (LIST, Some(_)) => {
+                        let tx = tx.clone();
+                        let _ = tx.send(Message::Query).await;
+                    }
+                    (LS, Some(_)) => {
+                        let tx = tx.clone();
+                        let _ = tx.send(Message::Query).await;
                     }
                     _ => {}
                 }
@@ -85,6 +106,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 db::delete_notification(&mut glue, id).await;
 
                 println!("Message::Delete done");
+            }
+            Message::DeleteAll => {
+                println!("Message:DeleteAll called!");
+
+                for (id, handle) in hash_map.iter() {
+                    handle.abort();
+                    db::delete_notification(&mut glue, *id).await;
+                }
+
+                println!("Message::DeleteAll done");
+            }
+            Message::Query => {
+                println!("Message::Query called!");
+
+                db::list_notification(&mut glue).await;
+
+                println!("Message::Query done");
             }
             _ => {
                 panic!("no such message type!");
