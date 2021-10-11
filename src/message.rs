@@ -24,4 +24,7 @@ pub enum Message {
     Query {
         oneshot_tx: oneshot::Sender<bool>,
     },
+    NotificationTest {
+        oneshot_tx: oneshot::Sender<bool>,
+    }
 }

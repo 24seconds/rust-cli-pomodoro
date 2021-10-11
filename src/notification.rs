@@ -1,4 +1,5 @@
 use chrono::{prelude::*, Duration};
+use notify_rust::{error::Error, Hint, Notification as NR_Notification, Timeout as NR_Timeout};
 
 pub struct Notification {
     id: u16,
@@ -42,4 +43,17 @@ impl Notification {
     pub fn get_id(&self) -> u16 {
         self.id
     }
+
+pub fn notify() -> Result<(), Error> {
+    NR_Notification::new()
+        .summary("Work time done!")
+        .body("This has nothing to do with emails.\nIt should not go away until you acknowledge it.")
+        .icon("chrome")
+        // .appname("thunderbird")
+        .hint(Hint::Category("im.received".to_owned()))
+        .hint(Hint::Resident(true)) // this is not supported by all implementations
+        // .timeout(Timeout(5000)) // this however is
+        .show()?;
+
+    Ok(())
 }

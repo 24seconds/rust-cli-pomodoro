@@ -13,9 +13,9 @@ mod message;
 mod notification;
 use database as db;
 
-use crate::argument::{parse_arg, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, LIST, LS};
+use crate::argument::{parse_arg, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, LIST, LS, TEST};
 use crate::message::Message;
-use crate::notification::Notification;
+use crate::notification::{Notification, notify};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -109,6 +109,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         let tx = tx.clone();
                         let _ = tx.send(Message::Query { oneshot_tx }).await;
                     }
+                    (TEST, Some(_)) => {
+                        let tx = tx.clone();
+                        let _ = tx.send(Message::NotificationTest { oneshot_tx }).await;
+                    }
                     _ => {}
                 }
             }
@@ -156,6 +160,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 println!("Message::Query done");
                 let _ = oneshot_tx.send(true);
+            }
+            Message::NotificationTest { oneshot_tx } => {
+                println!("Message:NotificationTest called!");
+
+                notify()?;
+
+                println!("Message:NotificationTest done");
             }
             _ => {
                 panic!("no such message type!");
@@ -227,6 +238,8 @@ fn spawn_notification(
         let wt = tokio::time::Duration::from_secs(work_time as u64);
         sleep(wt).await;
         println!("id ({}), work time ({}) done", id, work_time);
+
+        let _ = notify();
 
         let bt = tokio::time::Duration::from_secs(break_time as u64);
         sleep(bt).await;
