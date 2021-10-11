@@ -49,9 +49,9 @@ pub fn notify_work() -> Result<(), Error> {
     NR_Notification::new()
         .summary("Work time done!")
         .body("Work time finished.\nNow take a rest!")
-        // .appname("thunderbird")
+        .appname("pomodoro")
         .hint(Hint::Category("im.received".to_owned()))
-        // .timeout(Timeout(5000)) // this however is
+        .timeout(NR_Timeout::Milliseconds(5000))
         .show()?;
 
     Ok(())
@@ -61,8 +61,9 @@ pub fn notify_break() -> Result<(), Error> {
     NR_Notification::new()
         .summary("Break time done!")
         .body("Break time finished.\n Now back to work!")
+        .appname("pomodoro")
         .hint(Hint::Category("im.received".to_owned()))
-        .timeout(NR_Timeout::Milliseconds(5000)) // this however is
+        .timeout(NR_Timeout::Milliseconds(5000))
         .show()?;
 
     Ok(())
