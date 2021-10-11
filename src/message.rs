@@ -26,5 +26,5 @@ pub enum Message {
     },
     NotificationTest {
         oneshot_tx: oneshot::Sender<bool>,
-    }
+    },
 }

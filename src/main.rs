@@ -13,12 +13,45 @@ mod message;
 mod notification;
 use database as db;
 
-use crate::argument::{parse_arg, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, LIST, LS, TEST};
+use crate::argument::{
+    parse_arg, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, LIST, LS, TEST,
+};
 use crate::message::Message;
-use crate::notification::{Notification, notify_work, notify_break};
+use crate::notification::{notify_break, notify_work, Notification};
+
+#[macro_use]
+extern crate log;
+
+#[cfg(debug_assertions)]
+fn example() {
+    println!("Debugging enabled");
+}
+
+#[cfg(not(debug_assertions))]
+fn example() {
+    println!("Debugging disabled");
+}
+
+fn initialize_logging() {
+    if cfg!(debug_assertions) {
+        env_logger::Builder::from_default_env()
+            .filter(Some("rust_cli_pomodoro"), log::LevelFilter::Debug)
+            .init();
+    } else {
+        env_logger::Builder::from_default_env()
+            .filter(Some("rust_cli_pomodoro"), log::LevelFilter::Info)
+            .init();
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    initialize_logging();
+
+    info!("info test, start pomodoro...");
+    debug!("debug test, start pomodoro...");
+    warn!("warn test, start pomodoro...");
+
     let mut glue = db::get_memory_glue();
 
     db::initialize(&mut glue).await;
