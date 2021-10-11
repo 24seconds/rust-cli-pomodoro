@@ -32,18 +32,6 @@ fn example() {
     println!("Debugging disabled");
 }
 
-fn initialize_logging() {
-    if cfg!(debug_assertions) {
-        env_logger::Builder::from_default_env()
-            .filter(Some("rust_cli_pomodoro"), log::LevelFilter::Debug)
-            .init();
-    } else {
-        env_logger::Builder::from_default_env()
-            .filter(Some("rust_cli_pomodoro"), log::LevelFilter::Info)
-            .init();
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     initialize_logging();
@@ -211,6 +199,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
     sleep(Duration::from_secs(30)).await;
 
     Ok(())
+}
+
+fn get_package_name() -> String {
+    let package_name = env!("CARGO_PKG_NAME");
+    println!("package_name: {}", package_name);
+
+    package_name.replace("-", "_")
+}
+
+fn initialize_logging() {
+    let package_name = &get_package_name();
+
+    if cfg!(debug_assertions) {
+        env_logger::Builder::from_default_env()
+            .filter(Some(package_name), log::LevelFilter::Debug)
+            .init();
+    } else {
+        env_logger::Builder::from_default_env()
+            .filter(Some(package_name), log::LevelFilter::Info)
+            .init();
+    }
 }
 
 fn get_new_id(id_manager: &mut u16) -> u16 {
