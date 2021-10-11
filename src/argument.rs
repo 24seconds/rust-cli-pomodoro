@@ -17,7 +17,7 @@ pub fn get_app() -> App<'static, 'static> {
         .author("Young")
         .about("manage your time!")
         .subcommands(vec![
-            SubCommand::with_name("create")
+            SubCommand::with_name(CREATE)
                 .about("create a notification")
                 .arg(
                     Arg::with_name("work")
@@ -45,7 +45,7 @@ pub fn get_app() -> App<'static, 'static> {
                 ), // TODO(young): add default argument.
             // TODO(young): Check is possible to detect
             // TODO(young): if default arg is specified then other args should not be specified.
-            SubCommand::with_name("delete")
+            SubCommand::with_name(DELETE)
                 .about("delete a notification")
                 .arg(
                     Arg::with_name("id")
@@ -61,8 +61,8 @@ pub fn get_app() -> App<'static, 'static> {
                         .short("a")
                         .long("all"),
                 ),
-            SubCommand::with_name("list").about("list notifications long command"),
-            SubCommand::with_name("ls").about("list notifications short command"),
+            SubCommand::with_name(LIST).about("list notifications long command"),
+            SubCommand::with_name(LS).about("list notifications short command"),
             SubCommand::with_name(TEST).about("test notification"),
         ])
 }
