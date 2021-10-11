@@ -38,7 +38,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     info!("info test, start pomodoro...");
     debug!("debug test, start pomodoro...");
-    warn!("warn test, start pomodoro...");
 
     let mut glue = db::get_memory_glue();
 
@@ -58,12 +57,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let mut t = 1;
 
         loop {
-            println!("inside spawn blocking");
+            debug!("inside spawn blocking");
             let command = read_command(t);
             t += 1;
-            println!("user input: {}", &command);
+            debug!("user input: {}", &command);
 
-            let (oneshot_tx, oneshot_rx) = oneshot::channel::<bool>();
+            let (oneshot_tx, oneshot_rx) = oneshot::channel::<String>();
 
             let _ = tx_for_command
                 .send(Message::UserInput {
@@ -72,7 +71,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 })
                 .await;
 
-            oneshot_rx.await.unwrap();
+            let result = oneshot_rx.await.unwrap();
+            info!("{}", result);
         }
     });
 
@@ -150,45 +150,45 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let handle = spawn_notification(tx, id, work_time, break_time);
                 hash_map.insert(id, handle);
 
-                let _ = oneshot_tx.send(true);
+                let _ = oneshot_tx.send(format!("Notification (id: {}) created", id).to_string());
             }
             Message::Delete { id, oneshot_tx } => {
-                println!("Message::Delete called! {}", id);
+                debug!("Message::Delete called! {}", id);
 
                 delete_notification(id, &mut hash_map, &mut glue).await?;
 
-                println!("Message::Delete done");
-                let _ = oneshot_tx.send(true);
+                debug!("Message::Delete done");
+                let _ = oneshot_tx.send(format!("Notification (id: {}) deleted", id).to_string());
             }
             Message::SilentDelete { id } => {
                 delete_notification(id, &mut hash_map, &mut glue).await?;
             }
             Message::DeleteAll { oneshot_tx } => {
-                println!("Message:DeleteAll called!");
+                debug!("Message:DeleteAll called!");
 
                 for (id, handle) in hash_map.iter() {
                     handle.abort();
                 }
                 db::delete_all_notification(&mut glue).await;
 
-                println!("Message::DeleteAll done");
-                let _ = oneshot_tx.send(true);
+                debug!("Message::DeleteAll done");
+                let _ = oneshot_tx.send(String::from("All notifications deleted"));
             }
             Message::Query { oneshot_tx } => {
-                println!("Message::Query called!");
+                debug!("Message::Query called!");
 
                 db::list_notification(&mut glue).await;
 
-                println!("Message::Query done");
-                let _ = oneshot_tx.send(true);
+                debug!("Message::Query done");
+                let _ = oneshot_tx.send(String::from("Query succeed"));
             }
             Message::NotificationTest { oneshot_tx } => {
-                println!("Message:NotificationTest called!");
+                debug!("Message:NotificationTest called!");
 
                 notify_work()?;
 
-                println!("Message:NotificationTest done");
-                let _ = oneshot_tx.send(true);
+                debug!("Message:NotificationTest done");
+                let _ = oneshot_tx.send(String::from("NotificationTest called"));
             }
             _ => {
                 panic!("no such message type!");
@@ -203,8 +203,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 fn get_package_name() -> String {
     let package_name = env!("CARGO_PKG_NAME");
-    println!("package_name: {}", package_name);
-
     package_name.replace("-", "_")
 }
 
@@ -213,7 +211,7 @@ fn initialize_logging() {
 
     if cfg!(debug_assertions) {
         env_logger::Builder::from_default_env()
-            .filter(Some(package_name), log::LevelFilter::Debug)
+            .filter(Some(package_name), log::LevelFilter::Info)
             .init();
     } else {
         env_logger::Builder::from_default_env()
@@ -276,23 +274,23 @@ fn spawn_notification(
     tokio::spawn(async move {
         // TODO(geunyeong): Use sleep_until instead of sleep
         // sleep_until(deadline)
-        println!("id: {}, task started", id);
+        debug!("id: {}, task started", id);
 
         // TODO(geunyoeng): multiply 60. Currently it's second.
         let wt = tokio::time::Duration::from_secs(work_time as u64);
         sleep(wt).await;
-        println!("id ({}), work time ({}) done", id, work_time);
+        debug!("id ({}), work time ({}) done", id, work_time);
 
         let _ = notify_work();
 
         let bt = tokio::time::Duration::from_secs(break_time as u64);
         sleep(bt).await;
-        println!("id ({}), break time ({}) done", id, break_time);
+        debug!("id ({}), break time ({}) done", id, break_time);
 
         let _ = notify_break();
 
         let _ = tx.send(Message::SilentDelete { id }).await;
 
-        println!("id: {}, notification work time done!", id);
+        debug!("id: {}, notification work time done!", id);
     })
 }

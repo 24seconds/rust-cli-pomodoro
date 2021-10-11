@@ -52,22 +52,22 @@ pub async fn create_notification(glue: &mut Glue<Key, MemoryStorage>, notificati
         b_expired_at.to_rfc3339_opts(SecondsFormat::Millis, true)
     );
 
-    println!("create sql: {}", sql);
+    debug!("create sql: {}", sql);
 
     let output = glue.execute_async(sql.as_str()).await.unwrap();
-    println!("output: {:?}", output);
+    debug!("output: {:?}", output);
 }
 
 pub async fn list_notification(glue: &mut Glue<Key, MemoryStorage>) {
     let sql = "SELECT * FROM notifications;";
 
     let output = glue.execute_async(sql).await.unwrap();
-    println!("output: {:?}", output);
+    debug!("output: {:?}", output);
 
     match output {
         Payload::Select { labels: _, rows } => {
             for row in rows.into_iter() {
-                println!("ROW: {:?}", row);
+                debug!("ROW: {:?}", row);
             }
         }
         _ => {
@@ -84,10 +84,10 @@ pub async fn delete_notification(glue: &mut Glue<Key, MemoryStorage>, id: u16) {
         id
     );
 
-    println!("delete sql: {}", sql);
+    debug!("delete sql: {}", sql);
 
     let output = glue.execute_async(sql.as_str()).await.unwrap();
-    println!("output: {:?}", output);
+    debug!("output: {:?}", output);
 }
 
 pub async fn delete_all_notification(glue: &mut Glue<Key, MemoryStorage>) {
@@ -95,8 +95,8 @@ pub async fn delete_all_notification(glue: &mut Glue<Key, MemoryStorage>) {
         DELETE FROM notifications;
     "#;
 
-    println!("delete sql: {}", sql);
+    debug!("delete sql: {}", sql);
 
     let output = glue.execute_async(sql).await.unwrap();
-    println!("output: {:?}", output);
+    debug!("output: {:?}", output);
 }
