@@ -211,7 +211,7 @@ fn initialize_logging() {
 
     if cfg!(debug_assertions) {
         env_logger::Builder::from_default_env()
-            .filter(Some(package_name), log::LevelFilter::Info)
+            .filter(Some(package_name), log::LevelFilter::Debug)
             .init();
     } else {
         env_logger::Builder::from_default_env()
@@ -221,10 +221,10 @@ fn initialize_logging() {
 }
 
 fn get_new_id(id_manager: &mut u16) -> u16 {
-    let id = id_manager.clone();
+    let id = *id_manager;
     *id_manager += 1;
 
-    return id;
+    id
 }
 
 fn read_command(t: i32) -> String {
