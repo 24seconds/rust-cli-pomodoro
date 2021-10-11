@@ -43,16 +43,26 @@ impl Notification {
     pub fn get_id(&self) -> u16 {
         self.id
     }
+}
 
-pub fn notify() -> Result<(), Error> {
+pub fn notify_work() -> Result<(), Error> {
     NR_Notification::new()
         .summary("Work time done!")
-        .body("This has nothing to do with emails.\nIt should not go away until you acknowledge it.")
-        .icon("chrome")
+        .body("Work time finished.\nNow take a rest!")
         // .appname("thunderbird")
         .hint(Hint::Category("im.received".to_owned()))
-        .hint(Hint::Resident(true)) // this is not supported by all implementations
         // .timeout(Timeout(5000)) // this however is
+        .show()?;
+
+    Ok(())
+}
+
+pub fn notify_break() -> Result<(), Error> {
+    NR_Notification::new()
+        .summary("Break time done!")
+        .body("Break time finished.\n Now back to work!")
+        .hint(Hint::Category("im.received".to_owned()))
+        .timeout(NR_Timeout::Milliseconds(5000)) // this however is
         .show()?;
 
     Ok(())

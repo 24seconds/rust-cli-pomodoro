@@ -15,7 +15,7 @@ use database as db;
 
 use crate::argument::{parse_arg, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, LIST, LS, TEST};
 use crate::message::Message;
-use crate::notification::{Notification, notify};
+use crate::notification::{Notification, notify_work, notify_break};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -164,9 +164,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Message::NotificationTest { oneshot_tx } => {
                 println!("Message:NotificationTest called!");
 
-                notify()?;
+                notify_work()?;
 
                 println!("Message:NotificationTest done");
+                let _ = oneshot_tx.send(true);
             }
             _ => {
                 panic!("no such message type!");
@@ -235,15 +236,18 @@ fn spawn_notification(
         // sleep_until(deadline)
         println!("id: {}, task started", id);
 
+        // TODO(geunyoeng): multiply 60. Currently it's second.
         let wt = tokio::time::Duration::from_secs(work_time as u64);
         sleep(wt).await;
         println!("id ({}), work time ({}) done", id, work_time);
 
-        let _ = notify();
+        let _ = notify_work();
 
         let bt = tokio::time::Duration::from_secs(break_time as u64);
         sleep(bt).await;
         println!("id ({}), break time ({}) done", id, break_time);
+
+        let _ = notify_break();
 
         let _ = tx.send(Message::SilentDelete { id }).await;
 
