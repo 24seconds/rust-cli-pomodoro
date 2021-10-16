@@ -1,5 +1,6 @@
 use chrono::SecondsFormat;
 use gluesql::{memory_storage::Key, Glue, MemoryStorage, Payload};
+use tabled::Table;
 
 use crate::notification::Notification;
 
@@ -66,9 +67,13 @@ pub async fn list_notification(glue: &mut Glue<Key, MemoryStorage>) {
 
     match output {
         Payload::Select { labels: _, rows } => {
-            for row in rows.into_iter() {
-                debug!("ROW: {:?}", row);
-            }
+            let notifications = rows.into_iter().map(|row| {
+                Notification::convert_to_notification(row)
+            });
+
+            let table = Table::new(notifications).to_string();
+
+            info!("\n{}", table);
         }
         _ => {
             panic!("no such case!");
