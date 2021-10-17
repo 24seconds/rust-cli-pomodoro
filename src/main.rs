@@ -233,8 +233,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    sleep(Duration::from_secs(30)).await;
-
     Ok(())
 }
 
