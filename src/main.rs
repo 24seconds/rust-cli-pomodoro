@@ -23,16 +23,6 @@ use crate::notification::{notify_break, notify_work, Notification};
 #[macro_use]
 extern crate log;
 
-#[cfg(debug_assertions)]
-fn example() {
-    println!("Debugging enabled");
-}
-
-#[cfg(not(debug_assertions))]
-fn example() {
-    println!("Debugging disabled");
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     initialize_logging();

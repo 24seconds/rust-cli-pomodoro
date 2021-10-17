@@ -45,9 +45,7 @@ pub fn get_app() -> App<'static, 'static> {
                         .conflicts_with("break")
                         .short("d")
                         .long("default"),
-                ), // TODO(young): add default argument.
-            // TODO(young): Check is possible to detect
-            // TODO(young): if default arg is specified then other args should not be specified.
+                ),
             SubCommand::with_name(DELETE)
                 .about("delete a notification")
                 .arg(
