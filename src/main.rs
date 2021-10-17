@@ -6,7 +6,7 @@ use std::process;
 use tokio::sync::mpsc::{self, Sender};
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
-use tokio::time::{sleep, sleep_until, Duration};
+use tokio::time::sleep;
 
 mod argument;
 mod database;
@@ -33,10 +33,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut glue = db::get_memory_glue();
 
     db::initialize(&mut glue).await;
-
-    let test_input = vec!["create", "-w", "25", "-b", "5"];
-    let test_input = vec!["create", "-w=5", "-b", "2"];
-    // let test_input = vec!["help", "create"];
 
     let mut id_manager: u16 = 1;
     let mut hash_map: HashMap<u16, JoinHandle<()>> = HashMap::new();
@@ -193,7 +189,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Message::DeleteAll { oneshot_tx } => {
                 debug!("Message:DeleteAll called!");
 
-                for (id, handle) in hash_map.iter() {
+                for (_, handle) in hash_map.iter() {
                     handle.abort();
                 }
                 db::delete_all_notification(&mut glue).await;
@@ -216,9 +212,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 debug!("Message:NotificationTest done");
                 let _ = oneshot_tx.send(String::from("NotificationTest called"));
-            }
-            _ => {
-                panic!("no such message type!");
             }
         }
     }
@@ -297,18 +290,15 @@ fn spawn_notification(
     break_time: u16,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
-        // TODO(geunyeong): Use sleep_until instead of sleep
-        // sleep_until(deadline)
         debug!("id: {}, task started", id);
 
-        // TODO(geunyoeng): multiply 60. Currently it's second.
-        let wt = tokio::time::Duration::from_secs(work_time as u64);
+        let wt = tokio::time::Duration::from_secs(work_time as u64 * 60);
         sleep(wt).await;
         debug!("id ({}), work time ({}) done", id, work_time);
 
         let _ = notify_work();
 
-        let bt = tokio::time::Duration::from_secs(break_time as u64);
+        let bt = tokio::time::Duration::from_secs(break_time as u64 * 60);
         sleep(bt).await;
         debug!("id ({}), break time ({}) done", id, break_time);
 

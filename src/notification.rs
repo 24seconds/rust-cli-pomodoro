@@ -1,5 +1,5 @@
 use chrono::{prelude::*, Duration};
-use gluesql::{ast::DataType, Value};
+use gluesql::Value;
 use notify_rust::{error::Error, Hint, Notification as NR_Notification, Timeout as NR_Timeout};
 use tabled::Tabled;
 
