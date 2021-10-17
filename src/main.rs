@@ -134,6 +134,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         let tx = tx.clone();
                         let _ = tx.send(Message::NotificationTest { oneshot_tx }).await;
                     }
+                    (CLEAR, Some(_)) => {
+                        print!("\x1B[2J");
+                        let _ = oneshot_tx.send("".to_string());
+                    }
                     _ => {}
                 }
             }
