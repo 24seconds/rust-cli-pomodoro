@@ -56,9 +56,7 @@ pub async fn list_notification(glue: &mut Glue<Key, MemoryStorage>) {
 
     match output {
         Payload::Select { labels: _, rows } => {
-            let notifications = rows
-                .into_iter()
-                .map(|row| Notification::convert_to_notification(row));
+            let notifications = rows.into_iter().map(Notification::convert_to_notification);
 
             let table = Table::new(notifications).to_string();
 

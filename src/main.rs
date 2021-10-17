@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let result = oneshot_rx.await.unwrap();
 
-            if result.len() != 0 {
+            if !result.is_empty() {
                 info!("{}", result);
             }
         }
@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             }
                             // clap automatically print version string with out newline.
                             clap::ErrorKind::VersionDisplayed => {
-                                println!("");
+                                println!();
                                 let _ = oneshot_tx.send("".to_string());
                             }
                             _ => {

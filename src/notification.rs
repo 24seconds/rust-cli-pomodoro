@@ -91,7 +91,7 @@ impl Tabled for Notification {
             let work_min = sec / 60;
             let work_sec = sec - work_min * 60;
 
-            String::from(format!("{}:{}", work_min, work_sec))
+            format!("{}:{}", work_min, work_sec)
         };
 
         let break_remaining = {
@@ -99,7 +99,7 @@ impl Tabled for Notification {
             let break_min = sec / 60;
             let break_sec = sec - break_min * 60;
 
-            String::from(format!("{}:{}", break_min, break_sec))
+            format!("{}:{}", break_min, break_sec)
         };
 
         let local_time: DateTime<Local> = utc.into();
