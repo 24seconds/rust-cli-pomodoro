@@ -20,16 +20,6 @@ pub async fn initialize(glue: &mut Glue<Key, MemoryStorage>) {
             work_expired_at TIMESTAMP, break_expired_at TIMESTAMP,
             PRIMARY KEY(id)
         );"#,
-        r#"
-        INSERT INTO notifications VALUES (
-            1, 'test-notification-1', '2021-10-01T19:41:42Z', 
-            '2021-10-01T19:42:42Z', '2021-10-01T19:45:42Z'
-        );"#,
-        r#"
-        INSERT INTO notifications VALUES (
-            2, 'test-notification-2', '2021-10-01T19:41:42Z', 
-            '2021-10-01T19:43:42Z', '2021-10-01T19:47:42Z'
-        );"#,
     ];
 
     for sql in sqls {
