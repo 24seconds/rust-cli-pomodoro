@@ -23,7 +23,7 @@ pub async fn initialize(glue: &mut Glue<Key, MemoryStorage>) {
 
     for sql in sqls {
         let output = glue.execute_async(sql).await.unwrap();
-        println!("output: {:?}", output);
+        debug!("output: {:?}", output);
     }
 }
 
