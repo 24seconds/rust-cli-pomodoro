@@ -11,48 +11,6 @@ pub struct Notification {
     break_expired_at: DateTime<Utc>,
 }
 
-impl Tabled for Notification {
-    fn fields(&self) -> Vec<String> {
-        let utc = Utc::now();
-
-        let id = self.id.to_string();
-
-        let work_remaining = {
-            let sec = (self.work_expired_at - utc).num_seconds();
-            let work_min = sec / 60;
-            let work_sec = sec - work_min * 60;
-
-            String::from(format!("{}:{}", work_min, work_sec))
-        };
-
-        let break_remaining = {
-            let sec = (self.break_expired_at - utc).num_seconds();
-            let break_min = sec / 60;
-            let break_sec = sec - break_min * 60;
-
-            String::from(format!("{}:{}", break_min, break_sec))
-        };
-
-        let created_at = self.created_at.naive_local().to_string();
-        let description = self.description.to_string();
-
-        vec![id, work_remaining, break_remaining, created_at, description]
-    }
-
-    fn headers() -> Vec<String> {
-        vec![
-            "id",
-            "work_remaining",
-            "break_remaining",
-            "created_at",
-            "description",
-        ]
-        .into_iter()
-        .map(|x| x.to_string())
-        .collect()
-    }
-}
-
 impl<'a> Notification {
     pub fn new(id: u16, work_time: u16, break_time: u16) -> Self {
         let utc = Utc::now();
@@ -119,6 +77,48 @@ impl<'a> Notification {
             work_expired_at,
             break_expired_at,
         }
+    }
+}
+
+impl Tabled for Notification {
+    fn fields(&self) -> Vec<String> {
+        let utc = Utc::now();
+
+        let id = self.id.to_string();
+
+        let work_remaining = {
+            let sec = (self.work_expired_at - utc).num_seconds();
+            let work_min = sec / 60;
+            let work_sec = sec - work_min * 60;
+
+            String::from(format!("{}:{}", work_min, work_sec))
+        };
+
+        let break_remaining = {
+            let sec = (self.break_expired_at - utc).num_seconds();
+            let break_min = sec / 60;
+            let break_sec = sec - break_min * 60;
+
+            String::from(format!("{}:{}", break_min, break_sec))
+        };
+
+        let created_at = self.created_at.naive_local().to_string();
+        let description = self.description.to_string();
+
+        vec![id, work_remaining, break_remaining, created_at, description]
+    }
+
+    fn headers() -> Vec<String> {
+        vec![
+            "id",
+            "work_remaining (min)",
+            "break_remaining (min)",
+            "created_at",
+            "description",
+        ]
+        .into_iter()
+        .map(|x| x.to_string())
+        .collect()
     }
 }
 
