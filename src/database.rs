@@ -18,7 +18,6 @@ pub async fn initialize(glue: &mut Glue<Key, MemoryStorage>) {
             id INTEGER, description TEXT, 
             created_at TIMESTAMP, 
             work_expired_at TIMESTAMP, break_expired_at TIMESTAMP,
-            PRIMARY KEY(id)
         );"#,
     ];
 
