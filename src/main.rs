@@ -74,7 +74,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .await;
 
             let result = oneshot_rx.await.unwrap();
-            info!("{}", result);
+
+            if result.len() != 0 {
+                info!("{}", result);
+            }
         }
     });
 

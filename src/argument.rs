@@ -15,6 +15,7 @@ pub fn get_app() -> App<'static, 'static> {
     App::new("pomodoro")
         .setting(AppSettings::NoBinaryName)
         .version("0.0.1")
+        .version_short("v")
         .author("Young")
         .about("manage your time!")
         .subcommands(vec![
