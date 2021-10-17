@@ -74,7 +74,7 @@ cargo run --release
 - [ ] Provide more notification delivery option: Currently pomodoro uses desktop notification. But notification could be delivered through slack, email or any kind of method.
 - [ ] Provide an easy way to use this app (brew, snap, cargo install, etc..)
 - [ ] More rich notification: sound, app icon, hint, action etc
-
+- [ ] Write test cases 
 
 ## Compatibility
 
