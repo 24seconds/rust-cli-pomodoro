@@ -107,8 +107,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 let _ = oneshot_tx.send("".to_string());
                             }
                             _ => {
-                                error!("err: {:?}", err);
-                                let _ = oneshot_tx.send(err.to_string());
+                                print!("\n{}\n", err);
+                                let _ = oneshot_tx.send("".to_string());
                             }
                         }
                         continue;
