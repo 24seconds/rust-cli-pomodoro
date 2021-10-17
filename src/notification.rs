@@ -102,7 +102,9 @@ impl Tabled for Notification {
             String::from(format!("{}:{}", break_min, break_sec))
         };
 
-        let created_at = self.created_at.naive_local().to_string();
+        let local_time: DateTime<Local> = utc.into();
+        let created_at = local_time.format("%F %T %z").to_string();
+
         let description = self.description.to_string();
 
         vec![id, work_remaining, break_remaining, created_at, description]
