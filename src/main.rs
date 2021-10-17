@@ -2,6 +2,7 @@ use gluesql::{memory_storage::Key, Glue, MemoryStorage};
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{self, Write};
+use std::process;
 use tokio::sync::mpsc::{self, Sender};
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
@@ -14,7 +15,7 @@ mod notification;
 use database as db;
 
 use crate::argument::{
-    parse_arg, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, LIST, LS, TEST,
+    parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, TEST,
 };
 use crate::message::Message;
 use crate::notification::{notify_break, notify_work, Notification};
@@ -166,6 +167,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     (CLEAR, Some(_)) => {
                         print!("\x1B[2J");
                         let _ = oneshot_tx.send("".to_string());
+                    }
+                    (EXIT, Some(_)) => {
+                        process::exit(0);
                     }
                     _ => {}
                 }
