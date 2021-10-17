@@ -64,6 +64,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let (oneshot_tx, oneshot_rx) = oneshot::channel::<String>();
 
+            debug!("command: {:?}", command);
+
             let _ = tx_for_command
                 .send(Message::UserInput {
                     command,
@@ -84,7 +86,31 @@ async fn main() -> Result<(), Box<dyn Error>> {
             } => {
                 let app = argument::get_app();
                 let input = command.split_whitespace();
-                let matches = app.get_matches_from(input);
+
+                debug!("input: {:?}", input);
+
+                let matches = match app.get_matches_from_safe(input) {
+                    Err(err) => {
+                        match err.kind {
+                            // HelpDisplayed has help message in error
+                            clap::ErrorKind::HelpDisplayed => {
+                                print!("\n{}\n", err);
+                                let _ = oneshot_tx.send("".to_string());
+                            }
+                            // clap automatically print version string with out newline.
+                            clap::ErrorKind::VersionDisplayed => {
+                                println!("");
+                                let _ = oneshot_tx.send("".to_string());
+                            }
+                            _ => {
+                                error!("err: {:?}", err);
+                                let _ = oneshot_tx.send(err.to_string());
+                            }
+                        }
+                        continue;
+                    }
+                    Ok(arg) => arg,
+                };
 
                 match matches.subcommand() {
                     (CREATE, Some(sub_matches)) => {
