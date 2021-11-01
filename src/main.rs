@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::io::{self, Write};
 use std::process;
+use std::sync::Arc;
 use tokio::sync::mpsc::{self, Sender};
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
@@ -13,12 +14,15 @@ mod database;
 mod message;
 mod notification;
 use database as db;
+mod configuration;
+mod slack;
 
 use crate::argument::{
     parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, TEST,
 };
 use crate::message::Message;
 use crate::notification::{notify_break, notify_work, Notification};
+use crate::configuration::{intialize_configuration, Configuration};
 
 #[macro_use]
 extern crate log;
@@ -26,6 +30,9 @@ extern crate log;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     initialize_logging();
+    
+    let configuration = intialize_configuration()?;
+    let configuration = Arc::new(configuration);
 
     info!("info test, start pomodoro...");
     debug!("debug test, start pomodoro...");
@@ -170,7 +177,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .await;
 
                 let tx = tx.clone();
-                let handle = spawn_notification(tx, id, work_time, break_time);
+                let handle = spawn_notification(tx, id, work_time, break_time, configuration.clone());
                 hash_map.insert(id, handle);
 
                 let _ = oneshot_tx.send(format!("Notification (id: {}) created", id).to_string());
@@ -208,7 +215,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Message::NotificationTest { oneshot_tx } => {
                 debug!("Message:NotificationTest called!");
 
-                notify_work()?;
+                notify_work(&configuration.clone()).await?;
 
                 debug!("Message:NotificationTest done");
                 let _ = oneshot_tx.send(String::from("NotificationTest called"));
@@ -288,6 +295,7 @@ fn spawn_notification(
     id: u16,
     work_time: u16,
     break_time: u16,
+    configuration: Arc<Configuration>,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
         debug!("id: {}, task started", id);
@@ -296,13 +304,13 @@ fn spawn_notification(
         sleep(wt).await;
         debug!("id ({}), work time ({}) done", id, work_time);
 
-        let _ = notify_work();
+        let _ = notify_work(&configuration).await;
 
         let bt = tokio::time::Duration::from_secs(break_time as u64 * 60);
         sleep(bt).await;
         debug!("id ({}), break time ({}) done", id, break_time);
 
-        let _ = notify_break();
+        let _ = notify_break(&configuration).await;
 
         let _ = tx.send(Message::SilentDelete { id }).await;
 
