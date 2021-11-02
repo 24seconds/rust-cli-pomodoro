@@ -14,13 +14,15 @@ pub struct Notification {
 impl<'a> Notification {
     pub fn new(id: u16, work_time: u16, break_time: u16) -> Self {
         let utc = Utc::now();
+        let work_expired_at = utc + Duration::minutes(work_time as i64);
+        let break_expired_at = work_expired_at + Duration::minutes(break_time as i64);
 
         Notification {
             id,
             created_at: utc,
             description: String::from("sample"),
-            work_expired_at: utc + Duration::minutes(work_time as i64),
-            break_expired_at: utc + Duration::minutes(break_time as i64),
+            work_expired_at,
+            break_expired_at,
         }
     }
 
@@ -88,18 +90,28 @@ impl Tabled for Notification {
 
         let work_remaining = {
             let sec = (self.work_expired_at - utc).num_seconds();
-            let work_min = sec / 60;
-            let work_sec = sec - work_min * 60;
 
-            format!("{}:{}", work_min, work_sec)
+            if sec > 0 {
+                let work_min = sec / 60;
+                let work_sec = sec - work_min * 60;
+
+                format!("{}:{}", work_min, work_sec)
+            } else {
+                String::from("00:00")
+            }
         };
 
         let break_remaining = {
             let sec = (self.break_expired_at - utc).num_seconds();
-            let break_min = sec / 60;
-            let break_sec = sec - break_min * 60;
 
-            format!("{}:{}", break_min, break_sec)
+            if sec > 0 {
+                let break_min = sec / 60;
+                let break_sec = sec - break_min * 60;
+
+                format!("{}:{}", break_min, break_sec)
+            } else {
+                String::from("00:00")
+            }
         };
 
         let local_time: DateTime<Local> = utc.into();
