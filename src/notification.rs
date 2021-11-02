@@ -1,7 +1,12 @@
 use chrono::{prelude::*, Duration};
 use gluesql::Value;
 use notify_rust::{error::Error, Hint, Notification as NR_Notification, Timeout as NR_Timeout};
+use serde_json::json;
+use std::process::Command;
+use std::sync::Arc;
 use tabled::Tabled;
+
+use crate::configuration::{Configuration, SLACK_API_URL};
 
 pub struct Notification {
     id: u16,
@@ -136,26 +141,80 @@ impl Tabled for Notification {
     }
 }
 
-pub fn notify_work() -> Result<(), Error> {
-    NR_Notification::new()
+// TODO(young): Handle the case if terminal notifier is not installed
+fn notify_terminal_notifier(message: &'static str) {
+    Command::new("terminal-notifier")
+        .arg("-message")
+        .arg(message)
+        .output()
+        .expect("failed to execute process");
+}
+
+async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>) {
+    let token = configuration.get_slack_token();
+    let channel = configuration.get_slack_channel();
+
+    if token.is_none() || channel.is_none() {
+        return;
+    }
+
+    let body = json!({
+        "channel": channel,
+        "text": message
+    }).to_string();
+
+    let client = reqwest::Client::new();
+    let resp = client.post(SLACK_API_URL)
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", token.clone().unwrap()))
+        .body(body)
+        .send().await;
+    
+    debug!("resp: {:?}", resp);
+}
+
+pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error> {
+    let mut notification = NR_Notification::new();
+    let notification = notification
         .summary("Work time done!")
         .body("Work time finished.\nNow take a rest!")
         .appname("pomodoro")
-        .hint(Hint::Category("im.received".to_owned()))
-        .timeout(NR_Timeout::Milliseconds(5000))
-        .show()?;
+        .timeout(NR_Timeout::Milliseconds(5000));
+    
+    #[cfg(target_os = "linux")]
+    notificatoin.hint(Hint::Category("im.received".to_owned()));
+
+    notification.show()?;
+
+    #[cfg(target_os = "macos")]
+    notify_terminal_notifier("work done. Take a rest!");
+
+    #[cfg(target_os = "macos")]
+    notify_slack("work done. Take a rest!", configuration).await;
 
     Ok(())
 }
 
-pub fn notify_break() -> Result<(), Error> {
-    NR_Notification::new()
+pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<(), Error> {
+    let mut notification = NR_Notification::new();
+    let notification = notification
         .summary("Break time done!")
         .body("Break time finished.\n Now back to work!")
         .appname("pomodoro")
-        .hint(Hint::Category("im.received".to_owned()))
-        .timeout(NR_Timeout::Milliseconds(5000))
-        .show()?;
+        .timeout(NR_Timeout::Milliseconds(5000));
 
+    #[cfg(target_os = "linux")]
+    notificatoin.hint(Hint::Category("im.received".to_owned()));
+
+    notification.show()?;
+
+    // use terminal-notifier for desktop notification
+    #[cfg(target_os = "macos")]
+    notify_terminal_notifier("break done. Get back to work");
+
+    // use slack notification if configuration specified
+    #[cfg(target_os = "macos")]
+    notify_slack("break done. Get back to work", configuration).await;
+    
     Ok(())
 }
