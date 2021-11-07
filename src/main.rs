@@ -40,6 +40,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     db::initialize(&mut glue).await;
 
+    tokio::spawn(async move {
+        let mut test_glue = db::get_memory_glue();
+
+        let sqls = vec![
+            "DROP TABLE IF EXISTS notifications;",
+            r#"
+        CREATE TABLE notifications (
+            id INTEGER, description TEXT, 
+            created_at TIMESTAMP, 
+            work_expired_at TIMESTAMP, break_expired_at TIMESTAMP,
+        );"#,
+        ];
+
+        for sql in sqls {
+            let output = test_glue.execute(sql).unwrap();
+            debug!("output: {:?}", output);
+        }
+    });
+
     let mut id_manager: u16 = 1;
     let mut hash_map: HashMap<u16, JoinHandle<()>> = HashMap::new();
 
