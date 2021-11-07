@@ -311,17 +311,21 @@ fn spawn_notification(
     tokio::spawn(async move {
         debug!("id: {}, task started", id);
 
-        let wt = tokio::time::Duration::from_secs(work_time as u64 * 60);
-        sleep(wt).await;
-        debug!("id ({}), work time ({}) done", id, work_time);
+        if work_time > 0 {
+            let wt = tokio::time::Duration::from_secs(work_time as u64);
+            sleep(wt).await;
+            debug!("id ({}), work time ({}) done", id, work_time);
 
-        let _ = notify_work(&configuration).await;
+            let _ = notify_work(&configuration).await;
+        }
 
-        let bt = tokio::time::Duration::from_secs(break_time as u64 * 60);
-        sleep(bt).await;
-        debug!("id ({}), break time ({}) done", id, break_time);
+        if break_time > 0 {
+            let bt = tokio::time::Duration::from_secs(break_time as u64);
+            sleep(bt).await;
+            debug!("id ({}), break time ({}) done", id, break_time);
 
-        let _ = notify_break(&configuration).await;
+            let _ = notify_break(&configuration).await;
+        }
 
         let _ = tx.send(Message::SilentDelete { id }).await;
 
