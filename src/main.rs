@@ -15,7 +15,6 @@ mod message;
 mod notification;
 use database as db;
 mod configuration;
-mod slack;
 
 use crate::argument::{
     parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, TEST,
