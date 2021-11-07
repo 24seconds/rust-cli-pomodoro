@@ -19,7 +19,7 @@ mod configuration;
 use crate::argument::{
     parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, TEST,
 };
-use crate::configuration::{intialize_configuration, Configuration};
+use crate::configuration::{initialize_configuration, Configuration};
 use crate::message::Message;
 use crate::notification::{notify_break, notify_work, Notification};
 
@@ -30,7 +30,7 @@ extern crate log;
 async fn main() -> Result<(), Box<dyn Error>> {
     initialize_logging();
 
-    let configuration = intialize_configuration()?;
+    let configuration = initialize_configuration()?;
     let configuration = Arc::new(configuration);
 
     info!("info test, start pomodoro...");
