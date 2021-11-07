@@ -1,8 +1,10 @@
 use chrono::SecondsFormat;
 use gluesql::{memory_storage::Key, Glue, MemoryStorage, Payload};
+use std::sync::{Arc, Mutex};
 use tabled::Table;
 
 use crate::notification::Notification;
+use crate::ArcGlue;
 
 pub fn get_memory_glue() -> Glue<Key, MemoryStorage> {
     let storage = MemoryStorage::default();
@@ -10,7 +12,9 @@ pub fn get_memory_glue() -> Glue<Key, MemoryStorage> {
     Glue::new(storage)
 }
 
-pub async fn initialize(glue: &mut Glue<Key, MemoryStorage>) {
+pub async fn initialize(glue: Arc<Mutex<Glue<Key, MemoryStorage>>>) {
+    let mut glue = glue.lock().unwrap();
+
     let sqls = vec![
         "DROP TABLE IF EXISTS notifications;",
         r#"
@@ -28,7 +32,9 @@ pub async fn initialize(glue: &mut Glue<Key, MemoryStorage>) {
 }
 
 //TODO(young): Handle error
-pub async fn create_notification(glue: &mut Glue<Key, MemoryStorage>, notification: &Notification) {
+pub async fn create_notification(glue: ArcGlue, notification: &Notification) {
+    let mut glue = glue.lock().unwrap();
+
     let (id, desc, created_at, w_expired_at, b_expired_at) = notification.get_values();
 
     let sql = format!(
@@ -48,7 +54,9 @@ pub async fn create_notification(glue: &mut Glue<Key, MemoryStorage>, notificati
     debug!("output: {:?}", output);
 }
 
-pub async fn list_notification(glue: &mut Glue<Key, MemoryStorage>) {
+pub async fn list_notification(glue: ArcGlue) {
+    let mut glue = glue.lock().unwrap();
+
     let sql = "SELECT * FROM notifications;";
 
     let output = glue.execute(sql).unwrap();
@@ -68,7 +76,9 @@ pub async fn list_notification(glue: &mut Glue<Key, MemoryStorage>) {
     }
 }
 
-pub async fn delete_notification(glue: &mut Glue<Key, MemoryStorage>, id: u16) {
+pub async fn delete_notification(glue: ArcGlue, id: u16) {
+    let mut glue = glue.lock().unwrap();
+
     let sql = format!(
         r#"
         DELETE FROM notifications WHERE id = {};
@@ -82,7 +92,9 @@ pub async fn delete_notification(glue: &mut Glue<Key, MemoryStorage>, id: u16) {
     debug!("output: {:?}", output);
 }
 
-pub async fn delete_all_notification(glue: &mut Glue<Key, MemoryStorage>) {
+pub async fn delete_all_notification(glue: ArcGlue) {
+    let mut glue = glue.lock().unwrap();
+
     let sql = r#"
         DELETE FROM notifications;
     "#;
