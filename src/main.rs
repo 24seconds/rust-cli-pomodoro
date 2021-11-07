@@ -40,9 +40,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     db::initialize(&mut glue).await;
 
-    tokio::spawn(async move {
-        let mut test_glue = db::get_memory_glue();
+    let mut test_glue = db::get_memory_glue();
 
+    tokio::spawn(async move {
         let sqls = vec![
             "DROP TABLE IF EXISTS notifications;",
             r#"
