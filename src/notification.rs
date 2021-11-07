@@ -182,7 +182,7 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error
         .timeout(NR_Timeout::Milliseconds(5000));
     
     #[cfg(target_os = "linux")]
-    notificatoin.hint(Hint::Category("im.received".to_owned()));
+    notification.hint(Hint::Category("im.received".to_owned()));
 
     notification.show()?;
 
@@ -204,7 +204,7 @@ pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<(), Erro
         .timeout(NR_Timeout::Milliseconds(5000));
 
     #[cfg(target_os = "linux")]
-    notificatoin.hint(Hint::Category("im.received".to_owned()));
+    notification.hint(Hint::Category("im.received".to_owned()));
 
     notification.show()?;
 
