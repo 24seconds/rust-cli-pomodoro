@@ -27,14 +27,16 @@ pub fn get_app() -> App<'static, 'static> {
                         .help("The focus time. Unit is minutes")
                         .takes_value(true)
                         .short("w")
-                        .long("work"),
+                        .long("work")
+                        .default_value("0"),
                 )
                 .arg(
                     Arg::with_name("break")
                         .help("The break time, Unit is minutes")
                         .takes_value(true)
                         .short("b")
-                        .long("b"),
+                        .long("b")
+                        .default_value("0"),
                 )
                 .arg(
                     Arg::with_name("default")

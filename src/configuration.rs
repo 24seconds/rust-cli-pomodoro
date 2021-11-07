@@ -1,11 +1,11 @@
 use serde::Deserialize;
 
+use std::env::{self, VarError};
 use std::error::Error;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use std::ffi::OsStr;
-use std::env::{self, VarError};
 
 const SLACK_TOKEN: &str = "SLACK_TOKEN";
 const SLACK_CHANNEL: &str = "SLACK_CHANNEL";
@@ -43,11 +43,13 @@ impl Configuration {
 }
 
 fn get_value_from_env(key: &str) -> Result<Option<String>, VarError> {
-    let value = env::var(key)
-    .map_or_else(|e| match e {
-        VarError::NotPresent => Ok(None),
-        _ => Err(e),
-    }, |v| Ok(Some(v)))?;
+    let value = env::var(key).map_or_else(
+        |e| match e {
+            VarError::NotPresent => Ok(None),
+            _ => Err(e),
+        },
+        |v| Ok(Some(v)),
+    )?;
 
     Ok(value)
 }
@@ -63,15 +65,17 @@ pub fn intialize_configuration() -> Result<Configuration, Box<dyn Error>> {
     } else {
         let path = env::current_dir()?.join(CREDENTIAL_FILE);
 
-            read_credential_from_file(path)?
+        read_credential_from_file(path)?
     };
 
     debug!("configuration: {:?}", configuration);
-    
+
     Ok(configuration)
 }
 
-fn read_credential_from_file<P: AsRef<Path> + AsRef<OsStr>>(path: P) -> Result<Configuration, Box<dyn Error>> {
+fn read_credential_from_file<P: AsRef<Path> + AsRef<OsStr>>(
+    path: P,
+) -> Result<Configuration, Box<dyn Error>> {
     if !Path::new(&path).exists() {
         return Ok(Configuration::default());
     }

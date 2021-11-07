@@ -19,9 +19,9 @@ mod configuration;
 use crate::argument::{
     parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, TEST,
 };
+use crate::configuration::{intialize_configuration, Configuration};
 use crate::message::Message;
 use crate::notification::{notify_break, notify_work, Notification};
-use crate::configuration::{intialize_configuration, Configuration};
 
 #[macro_use]
 extern crate log;
@@ -29,7 +29,7 @@ extern crate log;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     initialize_logging();
-    
+
     let configuration = intialize_configuration()?;
     let configuration = Arc::new(configuration);
 
@@ -119,6 +119,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             (work_time, break_time)
                         };
 
+                        debug!("work_time: {}", work_time);
+                        debug!("break_time: {}", break_time);
+
+                        if work_time == 0 && break_time == 0 {
+                            let _ = oneshot_tx.send(
+                                String::from("work_time and break_time both can not be zero both")
+                                    .to_string(),
+                            );
+                            continue;
+                        }
+
                         let id = get_new_id(&mut id_manager);
 
                         let tx = tx.clone();
@@ -176,7 +187,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .await;
 
                 let tx = tx.clone();
-                let handle = spawn_notification(tx, id, work_time, break_time, configuration.clone());
+                let handle =
+                    spawn_notification(tx, id, work_time, break_time, configuration.clone());
                 hash_map.insert(id, handle);
 
                 let _ = oneshot_tx.send(format!("Notification (id: {}) created", id).to_string());
@@ -299,17 +311,21 @@ fn spawn_notification(
     tokio::spawn(async move {
         debug!("id: {}, task started", id);
 
-        let wt = tokio::time::Duration::from_secs(work_time as u64 * 60);
-        sleep(wt).await;
-        debug!("id ({}), work time ({}) done", id, work_time);
+        if work_time > 0 {
+            let wt = tokio::time::Duration::from_secs(work_time as u64);
+            sleep(wt).await;
+            debug!("id ({}), work time ({}) done", id, work_time);
 
-        let _ = notify_work(&configuration).await;
+            let _ = notify_work(&configuration).await;
+        }
 
-        let bt = tokio::time::Duration::from_secs(break_time as u64 * 60);
-        sleep(bt).await;
-        debug!("id ({}), break time ({}) done", id, break_time);
+        if break_time > 0 {
+            let bt = tokio::time::Duration::from_secs(break_time as u64);
+            sleep(bt).await;
+            debug!("id ({}), break time ({}) done", id, break_time);
 
-        let _ = notify_break(&configuration).await;
+            let _ = notify_break(&configuration).await;
+        }
 
         let _ = tx.send(Message::SilentDelete { id }).await;
 

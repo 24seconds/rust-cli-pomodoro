@@ -155,21 +155,28 @@ async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>)
     let channel = configuration.get_slack_channel();
 
     if token.is_none() || channel.is_none() {
+        debug!("token or channel is none");
         return;
     }
 
     let body = json!({
         "channel": channel,
         "text": message
-    }).to_string();
+    })
+    .to_string();
 
     let client = reqwest::Client::new();
-    let resp = client.post(SLACK_API_URL)
+    let resp = client
+        .post(SLACK_API_URL)
         .header("Content-Type", "application/json")
-        .header("Authorization", format!("Bearer {}", token.clone().unwrap()))
+        .header(
+            "Authorization",
+            format!("Bearer {}", token.clone().unwrap()),
+        )
         .body(body)
-        .send().await;
-    
+        .send()
+        .await;
+
     debug!("resp: {:?}", resp);
 }
 
@@ -180,7 +187,7 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error
         .body("Work time finished.\nNow take a rest!")
         .appname("pomodoro")
         .timeout(NR_Timeout::Milliseconds(5000));
-    
+
     #[cfg(target_os = "linux")]
     notification.hint(Hint::Category("im.received".to_owned()));
 
@@ -189,7 +196,7 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error
     #[cfg(target_os = "macos")]
     notify_terminal_notifier("work done. Take a rest!");
 
-    #[cfg(target_os = "macos")]
+    // use slack notification if configuration specified
     notify_slack("work done. Take a rest!", configuration).await;
 
     Ok(())
@@ -213,8 +220,7 @@ pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<(), Erro
     notify_terminal_notifier("break done. Get back to work");
 
     // use slack notification if configuration specified
-    #[cfg(target_os = "macos")]
     notify_slack("break done. Get back to work", configuration).await;
-    
+
     Ok(())
 }
