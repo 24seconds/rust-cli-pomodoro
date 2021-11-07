@@ -22,7 +22,7 @@ pub async fn initialize(glue: &mut Glue<Key, MemoryStorage>) {
     ];
 
     for sql in sqls {
-        let output = glue.execute_async(sql).await.unwrap();
+        let output = glue.execute(sql).unwrap();
         debug!("output: {:?}", output);
     }
 }
@@ -44,14 +44,14 @@ pub async fn create_notification(glue: &mut Glue<Key, MemoryStorage>, notificati
 
     debug!("create sql: {}", sql);
 
-    let output = glue.execute_async(sql.as_str()).await.unwrap();
+    let output = glue.execute(sql.as_str()).unwrap();
     debug!("output: {:?}", output);
 }
 
 pub async fn list_notification(glue: &mut Glue<Key, MemoryStorage>) {
     let sql = "SELECT * FROM notifications;";
 
-    let output = glue.execute_async(sql).await.unwrap();
+    let output = glue.execute(sql).unwrap();
     debug!("output: {:?}", output);
 
     match output {
@@ -78,7 +78,7 @@ pub async fn delete_notification(glue: &mut Glue<Key, MemoryStorage>, id: u16) {
 
     debug!("delete sql: {}", sql);
 
-    let output = glue.execute_async(sql.as_str()).await.unwrap();
+    let output = glue.execute(sql.as_str()).unwrap();
     debug!("output: {:?}", output);
 }
 
@@ -89,6 +89,6 @@ pub async fn delete_all_notification(glue: &mut Glue<Key, MemoryStorage>) {
 
     debug!("delete sql: {}", sql);
 
-    let output = glue.execute_async(sql).await.unwrap();
+    let output = glue.execute(sql).unwrap();
     debug!("output: {:?}", output);
 }
