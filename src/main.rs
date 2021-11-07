@@ -47,12 +47,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let tx_for_command = tx.clone();
     tokio::spawn(async move {
-        let mut t = 1;
-
         loop {
             debug!("inside spawn blocking");
-            let command = read_command(t);
-            t += 1;
+            let command = read_command();
             debug!("user input: {}", &command);
 
             let (oneshot_tx, oneshot_rx) = oneshot::channel::<String>();
@@ -263,23 +260,19 @@ fn get_new_id(id_manager: &mut u16) -> u16 {
     id
 }
 
-fn read_command(t: i32) -> String {
-    if t == 0 {
-        String::from("create -w=5 -b 2")
-    } else {
-        print!("> ");
-        io::stdout().flush().expect("could not flush stdout");
+fn read_command() -> String {
+    print!("> ");
+    io::stdout().flush().expect("could not flush stdout");
 
-        let mut command = String::new();
+    let mut command = String::new();
 
-        io::stdin()
-            .read_line(&mut command)
-            .expect("Failed to read line");
+    io::stdin()
+        .read_line(&mut command)
+        .expect("Failed to read line");
 
-        let command = command.trim().to_string();
+    let command = command.trim().to_string();
 
-        command
-    }
+    command
 }
 
 async fn delete_notification(
