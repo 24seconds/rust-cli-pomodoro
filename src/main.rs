@@ -152,13 +152,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             let _ = tx.send(Message::DeleteAll { oneshot_tx }).await;
                         }
                     }
-                    (LIST, Some(_)) => {
-                        let tx = tx.clone();
-                        let _ = tx.send(Message::Query { oneshot_tx }).await;
-                    }
-                    (LS, Some(_)) => {
-                        let tx = tx.clone();
-                        let _ = tx.send(Message::Query { oneshot_tx }).await;
+                    (LS, Some(_)) | (LIST, Some(_)) => {
+                        debug!("Message::Query called!");
+                        db::list_notification(&mut glue).await;
+                        debug!("Message::Query done");
+
+                        let _ = oneshot_tx.send(String::from("Query succeed"));
                     }
                     (TEST, Some(_)) => {
                         let tx = tx.clone();
