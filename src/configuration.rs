@@ -54,7 +54,7 @@ fn get_value_from_env(key: &str) -> Result<Option<String>, VarError> {
     Ok(value)
 }
 
-pub fn intialize_configuration() -> Result<Configuration, Box<dyn Error>> {
+pub fn initialize_configuration() -> Result<Configuration, Box<dyn Error>> {
     let token = get_value_from_env(SLACK_TOKEN)?;
     let channel = get_value_from_env(SLACK_CHANNEL)?;
 
