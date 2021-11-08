@@ -54,7 +54,9 @@ fn get_value_from_env(key: &str) -> Result<Option<String>, VarError> {
     Ok(value)
 }
 
-pub fn initialize_configuration() -> Result<Configuration, Box<dyn Error>> {
+pub fn initialize_configuration(
+    credential_file: Option<&str>,
+) -> Result<Configuration, Box<dyn Error>> {
     let token = get_value_from_env(SLACK_TOKEN)?;
     let channel = get_value_from_env(SLACK_CHANNEL)?;
 
@@ -63,9 +65,14 @@ pub fn initialize_configuration() -> Result<Configuration, Box<dyn Error>> {
             .set_slack_token(token)
             .set_slack_channel(channel)
     } else {
-        let path = env::current_dir()?.join(CREDENTIAL_FILE);
+        match credential_file {
+            Some(f) => {
+                let path = env::current_dir()?.join(f);
 
-        read_credential_from_file(path)?
+                get_configuration_from_file(path)?
+            }
+            None => Configuration::default(),
+        }
     };
 
     debug!("configuration: {:?}", configuration);
@@ -73,7 +80,7 @@ pub fn initialize_configuration() -> Result<Configuration, Box<dyn Error>> {
     Ok(configuration)
 }
 
-fn read_credential_from_file<P: AsRef<Path> + AsRef<OsStr>>(
+fn get_configuration_from_file<P: AsRef<Path> + AsRef<OsStr>>(
     path: P,
 ) -> Result<Configuration, Box<dyn Error>> {
     if !Path::new(&path).exists() {
