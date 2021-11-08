@@ -36,7 +36,10 @@ struct UserInput {
 async fn main() -> Result<(), Box<dyn Error>> {
     initialize_logging();
 
-    let configuration = initialize_configuration()?;
+    let config_matches = argument::get_config_app().get_matches();
+    let credential_file_path = config_matches.value_of("config");
+
+    let configuration = initialize_configuration(credential_file_path)?;
     let configuration = Arc::new(configuration);
 
     info!("info test, start pomodoro...");

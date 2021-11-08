@@ -12,6 +12,16 @@ pub const TEST: &str = "test";
 pub const EXIT: &str = "exit";
 pub const CLEAR: &str = "clear";
 
+pub fn get_config_app() -> App<'static, 'static> {
+    App::new("pomodoro").arg(
+        Arg::with_name("config")
+            .help("read credential json file from this path")
+            .takes_value(true)
+            .short("c")
+            .long("config"),
+    )
+}
+
 pub fn get_app() -> App<'static, 'static> {
     App::new("pomodoro")
         .setting(AppSettings::NoBinaryName)

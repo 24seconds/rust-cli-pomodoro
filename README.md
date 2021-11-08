@@ -67,6 +67,23 @@ cd rust-cli-pomodoro
 cargo run --release
 ```
 
+### Using credential.json  
+pomodoro support slack notification.   
+To use it, you need to create `credential.json` file in somewhere in your local machine. `credentail.json` should have two keys, `token` and `channel`.
+
+```json
+{
+  "token": "your-slack-token-string",
+  "channel": "your-slack-channel-id"
+}
+```
+
+To run pomodoro with `credential.json`, run the app like this.
+```sh
+# If the credential.json file exists in the current path
+rust-cli-pomodoro --config ./credential.json
+```
+
 
 ## RoadMap
 
