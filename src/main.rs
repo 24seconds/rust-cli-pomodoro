@@ -37,7 +37,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     initialize_logging();
 
     let config_matches = argument::get_config_app().get_matches();
-
     let credential_file_path = config_matches.value_of("config");
 
     let configuration = initialize_configuration(credential_file_path)?;
