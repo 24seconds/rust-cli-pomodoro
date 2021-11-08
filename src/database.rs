@@ -54,6 +54,38 @@ pub async fn create_notification(glue: ArcGlue, notification: &Notification) {
     debug!("output: {:?}", output);
 }
 
+pub async fn read_notification(glue: ArcGlue, id: u16) -> Option<Notification> {
+    let mut glue = glue.lock().unwrap();
+
+    let sql = format!(
+        r#"
+        SELECT * FROM notifications WHERE id = {};
+        "#,
+        id
+    );
+
+    debug!("sql: {:?}", sql);
+
+    let output = glue.execute(sql.as_str()).unwrap();
+    debug!("output: {:?}", output);
+
+    match output {
+        Payload::Select {
+            labels: _,
+            mut rows,
+        } => {
+            if rows.is_empty() {
+                None
+            } else {
+                Some(Notification::convert_to_notification(rows.swap_remove(0)))
+            }
+        }
+        _ => {
+            panic!("no such case!");
+        }
+    }
+}
+
 pub async fn list_notification(glue: ArcGlue) {
     let mut glue = glue.lock().unwrap();
 
@@ -78,6 +110,19 @@ pub async fn list_notification(glue: ArcGlue) {
 
 pub async fn delete_notification(glue: ArcGlue, id: u16) {
     let mut glue = glue.lock().unwrap();
+
+    // check if notification exists. It's okay. glue executes commands sequentially as of now.
+    let sql = format!(
+        r#"
+        SELECT * FROM notifications WHERE id = {};
+        "#,
+        id
+    );
+
+    debug!("sql: {:?}", sql);
+
+    let output = glue.execute(sql.as_str()).unwrap();
+    debug!("output: {:?}", output);
 
     let sql = format!(
         r#"

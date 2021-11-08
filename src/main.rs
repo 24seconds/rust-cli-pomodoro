@@ -19,6 +19,7 @@ use crate::argument::{
     parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, TEST,
 };
 use crate::configuration::{initialize_configuration, Configuration};
+use crate::database::read_notification;
 use crate::notification::{notify_break, notify_work, Notification};
 
 #[macro_use]
@@ -164,11 +165,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                     debug!("Message::Delete called! {}", id);
 
-                    delete_notification(id, hash_map.clone(), glue.clone()).await?;
+                    let result = delete_notification(id, hash_map.clone(), glue.clone()).await;
+
+                    let message = match result {
+                        Ok(_) => format!("Notification (id: {}) deleted", id).to_string(),
+                        Err(e) => format!("Error: {}", e).to_string(),
+                    };
 
                     debug!("Message::Delete done");
-                    let _ =
-                        oneshot_tx.send(format!("Notification (id: {}) deleted", id).to_string());
+                    let _ = oneshot_tx.send(message);
                 } else {
                     // delete all
                     debug!("Message:DeleteAll called!");
@@ -257,6 +262,15 @@ async fn delete_notification(
     hash_map: Arc<Mutex<TaskMap>>,
     glue: ArcGlue,
 ) -> Result<(), Box<dyn Error>> {
+    let notification = db::read_notification(glue.clone(), id).await;
+    if notification.is_none() {
+        return Err(format!(
+            "deleting id ({}) failed. Corresponding notification does not exist",
+            id
+        )
+        .into());
+    }
+
     {
         let mut hash_map = hash_map.lock().unwrap();
 
@@ -267,7 +281,7 @@ async fn delete_notification(
 
         hash_map
             .remove(&id)
-            .ok_or(format!("failed to revmoe id ({})", id))?;
+            .ok_or(format!("failed to remove id ({})", id))?;
     }
 
     db::delete_notification(glue, id).await;
