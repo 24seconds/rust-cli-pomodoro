@@ -189,7 +189,9 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error
         .timeout(NR_Timeout::Milliseconds(5000));
 
     #[cfg(target_os = "linux")]
-    notification.hint(Hint::Category("im.received".to_owned()));
+    notification
+        .hint(Hint::Category("im.received".to_owned()))
+        .sound_name("message-new-instant");
 
     notification.show()?;
 
