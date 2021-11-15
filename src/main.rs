@@ -19,7 +19,6 @@ use crate::argument::{
     parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, TEST,
 };
 use crate::configuration::{initialize_configuration, Configuration};
-use crate::database::read_notification;
 use crate::notification::{notify_break, notify_work, Notification};
 
 #[macro_use]

@@ -2,6 +2,8 @@ use chrono::{prelude::*, Duration};
 use gluesql::Value;
 use notify_rust::{error::Error, Hint, Notification as NR_Notification, Timeout as NR_Timeout};
 use serde_json::json;
+
+#[cfg(target_os = "macos")]
 use std::process::Command;
 use std::sync::Arc;
 use tabled::Tabled;
@@ -142,6 +144,7 @@ impl Tabled for Notification {
 }
 
 // TODO(young): Handle the case if terminal notifier is not installed
+#[cfg(target_os = "macos")]
 fn notify_terminal_notifier(message: &'static str) {
     Command::new("terminal-notifier")
         .arg("-message")
@@ -189,7 +192,9 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error
         .timeout(NR_Timeout::Milliseconds(5000));
 
     #[cfg(target_os = "linux")]
-    notification.hint(Hint::Category("im.received".to_owned()));
+    notification
+        .hint(Hint::Category("im.received".to_owned()))
+        .sound_name("message-new-instant");
 
     notification.show()?;
 
