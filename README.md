@@ -17,11 +17,11 @@
 
 ## Motivation
 
-[Pomodoro technique](https://en.wikipedia.org/wiki/Pomodoro_Technique) is a time management method (Refer the link for more information). Typically 25 minutes works and 5 minutes break is one set.  
+[Pomodoro technique](https://en.wikipedia.org/wiki/Pomodoro_Technique) is a time management method (Refer the link for more information). Typically 25 minutes works and 5 minutes break is one set.
 For me, while I'm working I found intentional break time is needed for the better performance and health (do some stretching 5 minutes). So I made it.
 
 
-## Features  
+## Features
 
 A `notification` is consisted of work time and break time. Pomodoro manages timer using `notification`.
 
