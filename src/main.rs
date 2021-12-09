@@ -69,10 +69,21 @@ async fn analyze_input(
     debug!("input: {:?}", input);
     let matches = match app.get_matches_from_safe(input) {
         Ok(args) => args,
-        Err(result) => {
-            // TODO: Makes this like the default implementation
-            eprintln!("Error");
-            return Err(Box::new(result));
+        Err(err) => {
+            match err.kind {
+                // HelpDisplayed has help message in error
+                clap::ErrorKind::HelpDisplayed => {
+                    print!("\n{}\n", err);
+                }
+                // clap automatically print version string with out newline.
+                clap::ErrorKind::VersionDisplayed => {
+                    println!();
+                }
+                _ => {
+                    print!("\n{}\n", err);
+                }
+            }
+            return Err(Box::new(err));
         }
     };
 
@@ -93,9 +104,12 @@ async fn analyze_input(
 
                 let result = delete_notification(id, hash_map.clone(), glue.clone()).await;
 
-                let message = match result {
-                    Ok(_) => format!("Notification (id: {}) deleted", id).to_string(),
-                    Err(e) => format!("Error: {}", e).to_string(),
+                match result {
+                    Ok(_) => println!(
+                        "{}",
+                        format!("Notification (id: {}) deleted", id).to_string()
+                    ),
+                    Err(e) => eprintln!("{}", format!("Error: {}", e).to_string()),
                 };
                 debug!("Message::Delete done");
             } else {
@@ -128,7 +142,7 @@ async fn analyze_input(
         }
         (EXIT, Some(_)) => {
             process::exit(0);
-        } // _ => Err(Box::new(),
+        }
         _ => (),
     };
     Ok(())
@@ -195,7 +209,7 @@ async fn create_notification<'a>(
     debug!("break_time: {}", break_time);
 
     if work_time == 0 && break_time == 0 {
-        println!("work_time and break_time both can not be zero both");
+        eprintln!("work_time and break_time both can not be zero both");
     }
 
     let id = get_new_id(id_manager);
@@ -211,6 +225,10 @@ async fn create_notification<'a>(
     );
     let mut hash_map = hash_map.lock().unwrap();
     hash_map.insert(id, handle);
+    println!(
+        "{}",
+        format!("Notification (id: {}) created", id).to_string()
+    );
     Ok(())
 }
 
