@@ -101,11 +101,8 @@ async fn analyze_input(
                 let result = delete_notification(id, hash_map.clone(), glue.clone()).await;
 
                 match result {
-                    Ok(_) => println!(
-                        "{}",
-                        format!("Notification (id: {}) deleted", id).to_string()
-                    ),
-                    Err(e) => eprintln!("{}", format!("Error: {}", e).to_string()),
+                    Ok(_) => println!("{}", format!("Notification (id: {}) deleted", id)),
+                    Err(e) => eprintln!("{}", format!("Error: {}", e)),
                 };
                 debug!("Message::Delete done");
             } else {
@@ -221,10 +218,7 @@ async fn create_notification<'a>(
     );
     let mut hash_map = hash_map.lock().unwrap();
     hash_map.insert(id, handle);
-    println!(
-        "{}",
-        format!("Notification (id: {}) created", id).to_string()
-    );
+    println!("{}", format!("Notification (id: {}) created", id));
     Ok(())
 }
 
