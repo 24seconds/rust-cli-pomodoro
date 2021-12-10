@@ -203,6 +203,9 @@ async fn create_notification(
 
     if work_time == 0 && break_time == 0 {
         eprintln!("work_time and break_time both can not be zero both");
+        // TODO: This shouldn't return Ok, since it is an error, but for now,
+        // is just a "temporal fix" for returning from the function.
+        return Ok(());
     }
 
     let id = get_new_id(id_manager);
