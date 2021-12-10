@@ -182,8 +182,8 @@ fn read_command() -> String {
     command
 }
 
-async fn create_notification<'a>(
-    matches: &ArgMatches<'a>,
+async fn create_notification(
+    matches: &ArgMatches<'_>,
     configuration: &Arc<Configuration>,
     hash_map: &Arc<Mutex<TaskMap>>,
     glue: &ArcGlue,
