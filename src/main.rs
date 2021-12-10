@@ -89,11 +89,7 @@ async fn analyze_input(
 
     match matches.subcommand() {
         (CREATE, Some(sub_matches)) => {
-            if let Err(e) =
-                create_notification(sub_matches, configuration, hash_map, glue, id_manager).await
-            {
-                return Err(e);
-            };
+            create_notification(sub_matches, configuration, hash_map, glue, id_manager).await?;
         }
         (DELETE, Some(sub_matches)) => {
             if sub_matches.is_present("id") {
