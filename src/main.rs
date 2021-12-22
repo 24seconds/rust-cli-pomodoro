@@ -114,7 +114,7 @@ async fn analyze_input(
                     handle.abort();
                 }
                 db::delete_all_notification(glue.clone()).await;
-                println!("NotificationTest called");
+                println!("All Notifications deleted");
                 debug!("Message::DeleteAll done");
             }
         }
