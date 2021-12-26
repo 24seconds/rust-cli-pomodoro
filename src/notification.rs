@@ -1,5 +1,5 @@
 use chrono::{prelude::*, Duration};
-use gluesql::Value;
+use gluesql::data::Value;
 use notify_rust::{error::Error, Hint, Notification as NR_Notification, Timeout as NR_Timeout};
 use serde_json::json;
 
