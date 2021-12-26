@@ -41,7 +41,7 @@ pub async fn create_notification(glue: ArcGlue, notification: &Notification) {
 
     let sql = format!(
         r#"
-        INSERT INTO notifications VALUES ({}, '{}', '{}', '{}', '{}', '{}', '{}');
+        INSERT INTO notifications VALUES ({}, '{}', {}, {}, '{}', '{}', '{}');
     "#,
         id,
         desc,
