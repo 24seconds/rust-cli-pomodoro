@@ -1,6 +1,9 @@
 use chrono::{DateTime, Utc};
 use clap::ArgMatches;
-use gluesql::{memory_storage::Key, Glue, MemoryStorage};
+use gluesql::{
+    prelude::{Glue, MemoryStorage},
+    storages::memory_storage::Key,
+};
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{self, Write};

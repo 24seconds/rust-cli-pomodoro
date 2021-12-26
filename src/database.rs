@@ -1,5 +1,8 @@
 use chrono::SecondsFormat;
-use gluesql::{memory_storage::Key, Glue, MemoryStorage, Payload};
+use gluesql::{
+    prelude::{Glue, MemoryStorage, Payload},
+    storages::memory_storage::Key,
+};
 use std::sync::{Arc, Mutex};
 use tabled::Table;
 
