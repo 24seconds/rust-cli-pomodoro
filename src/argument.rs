@@ -35,21 +35,15 @@ pub fn get_app() -> App<'static, 'static> {
         .subcommands(vec![
             {
                 let cmd = SubCommand::with_name(CREATE);
-                let cmd = add_args_for_creation(cmd);
-
-                cmd
+                add_args_for_creation(cmd)
             },
             {
                 let cmd = SubCommand::with_name(QUEUE);
-                let cmd = add_args_for_creation(cmd);
-
-                cmd
+                add_args_for_creation(cmd)
             },
             {
                 let cmd = SubCommand::with_name(Q);
-                let cmd = add_args_for_creation(cmd);
-
-                cmd
+                add_args_for_creation(cmd)
             },
             SubCommand::with_name(DELETE)
                 .about("delete a notification")
