@@ -24,8 +24,7 @@ pub struct Notification {
 
 impl<'a> Notification {
     pub fn new(id: u16, work_time: u16, break_time: u16, created_at: DateTime<Utc>) -> Self {
-        let utc = created_at;
-        let work_expired_at = utc + Duration::minutes(work_time as i64);
+        let work_expired_at = created_at + Duration::minutes(work_time as i64);
         let break_expired_at = work_expired_at + Duration::minutes(break_time as i64);
 
         Notification {
@@ -33,7 +32,7 @@ impl<'a> Notification {
             description: String::from("sample"),
             work_time,
             break_time,
-            created_at: utc,
+            created_at,
             work_expired_at,
             break_expired_at,
         }
@@ -133,7 +132,7 @@ impl Tabled for Notification {
 
         let id = self.id.to_string();
 
-        let work_remaining = {
+        let work_remaining = if self.work_time > 0 {
             let sec = (self.work_expired_at - utc).num_seconds();
 
             if sec > 0 {
@@ -144,9 +143,11 @@ impl Tabled for Notification {
             } else {
                 String::from("00:00")
             }
+        } else {
+            String::from("N/A")
         };
 
-        let break_remaining = {
+        let break_remaining = if self.break_time > 0 {
             let sec = (self.break_expired_at - utc).num_seconds();
 
             if sec > 0 {
@@ -157,28 +158,39 @@ impl Tabled for Notification {
             } else {
                 String::from("00:00")
             }
+        } else {
+            String::from("N/A")
         };
 
-        let local_time: DateTime<Local> = self.created_at.into();
-        let created_at = local_time.format("%F %T %z").to_string();
+        let start_at = {
+            let last_expired_at = self.work_expired_at.max(self.break_expired_at);
+            let duration = Duration::minutes((self.work_time + self.break_time) as i64);
+
+            let local_time: DateTime<Local> = (last_expired_at - duration).into();
+            local_time.format("%F %T %z").to_string()
+        };
 
         let description = self.description.to_string();
 
-        let work_expired_at = {
+        let work_expired_at = if self.work_time > 0 {
             let local_time: DateTime<Local> = self.work_expired_at.into();
             local_time.format("%F %T %z").to_string()
+        } else {
+            String::from("N/A")
         };
 
-        let break_expired_at = {
+        let break_expired_at = if self.break_time > 0 {
             let local_time: DateTime<Local> = self.break_expired_at.into();
             local_time.format("%F %T %z").to_string()
+        } else {
+            String::from("N/A")
         };
 
         vec![
             id,
             work_remaining,
             break_remaining,
-            created_at,
+            start_at,
             work_expired_at,
             break_expired_at,
             description,
@@ -190,7 +202,7 @@ impl Tabled for Notification {
             "id",
             "work_remaining (min)",
             "break_remaining (min)",
-            "created_at",
+            "start_at",
             "expired_at (work)",
             "expired_at (break)",
             "description",
