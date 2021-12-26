@@ -3,6 +3,9 @@ use std::{error::Error, str::FromStr};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
 pub const CREATE: &str = "create";
+pub const QUEUE: &str = "queue";
+// TODO(young): I don't know how to make alias of QUEUE command so I added Q command for aliasing.
+pub const Q: &str = "q";
 pub const DELETE: &str = "delete";
 pub const LIST: &str = "list";
 pub const LS: &str = "ls";
@@ -30,34 +33,24 @@ pub fn get_app() -> App<'static, 'static> {
         .author("Young")
         .about("manage your time!")
         .subcommands(vec![
-            SubCommand::with_name(CREATE)
-                .about("create a notification")
-                .arg(
-                    Arg::with_name("work")
-                        .help("The focus time. Unit is minutes")
-                        .takes_value(true)
-                        .short("w")
-                        .long("work")
-                        .default_value("0"),
-                )
-                .arg(
-                    Arg::with_name("break")
-                        .help("The break time, Unit is minutes")
-                        .takes_value(true)
-                        .short("b")
-                        .long("b")
-                        .default_value("0"),
-                )
-                .arg(
-                    Arg::with_name("default")
-                        .help(
-                            "The flag to create default notification, 25 mins work and 5 min break",
-                        )
-                        .conflicts_with("work")
-                        .conflicts_with("break")
-                        .short("d")
-                        .long("default"),
-                ),
+            {
+                let cmd = SubCommand::with_name(CREATE);
+                let cmd = add_args_for_creation(cmd);
+
+                cmd
+            },
+            {
+                let cmd = SubCommand::with_name(QUEUE);
+                let cmd = add_args_for_creation(cmd);
+
+                cmd
+            },
+            {
+                let cmd = SubCommand::with_name(Q);
+                let cmd = add_args_for_creation(cmd);
+
+                cmd
+            },
             SubCommand::with_name(DELETE)
                 .about("delete a notification")
                 .arg(
@@ -95,4 +88,34 @@ where
         .map_err(|_| format!("failed to parse arg ({})", str))?;
 
     Ok(parsed)
+}
+
+fn add_args_for_creation<'a>(app: App<'a, 'a>) -> App<'a, 'a> {
+    let app = app
+        .arg(
+            Arg::with_name("work")
+                .help("The focus time. Unit is minutes")
+                .takes_value(true)
+                .short("w")
+                .long("work")
+                .default_value("0"),
+        )
+        .arg(
+            Arg::with_name("break")
+                .help("The break time, Unit is minutes")
+                .takes_value(true)
+                .short("b")
+                .long("b")
+                .default_value("0"),
+        )
+        .arg(
+            Arg::with_name("default")
+                .help("The flag to create default notification, 25 mins work and 5 min break")
+                .conflicts_with("work")
+                .conflicts_with("break")
+                .short("d")
+                .long("default"),
+        );
+
+    app
 }

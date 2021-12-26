@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use clap::ArgMatches;
 use gluesql::{memory_storage::Key, Glue, MemoryStorage};
 use std::collections::HashMap;
@@ -15,7 +16,8 @@ use database as db;
 mod configuration;
 
 use crate::argument::{
-    parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, TEST,
+    parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, Q,
+    QUEUE, TEST,
 };
 use crate::configuration::{initialize_configuration, Configuration};
 use crate::notification::{notify_break, notify_work, Notification};
@@ -90,6 +92,9 @@ async fn analyze_input(
     match matches.subcommand() {
         (CREATE, Some(sub_matches)) => {
             create_notification(sub_matches, configuration, hash_map, glue, id_manager).await?;
+        }
+        (QUEUE, Some(sub_matches)) | (Q, Some(sub_matches)) => {
+            queue_notification(sub_matches, configuration, hash_map, glue, id_manager).await?;
         }
         (DELETE, Some(sub_matches)) => {
             if sub_matches.is_present("id") {
@@ -182,8 +187,11 @@ fn read_command() -> String {
     command
 }
 
-
-fn get_new_notification(matches: &ArgMatches<'_>, id_manager: &mut u16,) -> Result<Option<Notification>, Box<dyn Error>> {
+fn get_new_notification(
+    matches: &ArgMatches<'_>,
+    id_manager: &mut u16,
+    created_at: DateTime<Utc>,
+) -> Result<Option<Notification>, Box<dyn Error>> {
     let (work_time, break_time) = if matches.is_present("default") {
         (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
     } else {
@@ -205,7 +213,9 @@ fn get_new_notification(matches: &ArgMatches<'_>, id_manager: &mut u16,) -> Resu
 
     let id = get_new_id(id_manager);
 
-    Ok(Some(Notification::new(id, work_time, break_time)))
+    Ok(Some(Notification::new(
+        id, work_time, break_time, created_at,
+    )))
 }
 
 async fn create_notification(
@@ -215,11 +225,10 @@ async fn create_notification(
     glue: &ArcGlue,
     id_manager: &mut u16,
 ) -> Result<(), Box<dyn Error>> {
-
-    let notification = get_new_notification(matches, id_manager)?;
+    let notification = get_new_notification(matches, id_manager, Utc::now())?;
     let notification = match notification {
         Some(n) => n,
-        None => return Ok(())
+        None => return Ok(()),
     };
     let id = notification.get_id();
 
@@ -234,6 +243,49 @@ async fn create_notification(
     let mut hash_map = hash_map.lock().unwrap();
     hash_map.insert(id, handle);
     println!("{}", format!("Notification (id: {}) created", id));
+    Ok(())
+}
+
+async fn queue_notification(
+    matches: &ArgMatches<'_>,
+    configuration: &Arc<Configuration>,
+    hash_map: &Arc<Mutex<TaskMap>>,
+    glue: &ArcGlue,
+    id_manager: &mut u16,
+) -> Result<(), Box<dyn Error>> {
+    let last_expired_notification = db::read_last_expired_notification(glue.clone()).await;
+
+    let created_at = match last_expired_notification {
+        Some(n) => {
+            debug!("last_expired_notification: {:?}", &n);
+
+            let (_, _, _, _, _, work_expired_at, break_expired_at) = n.get_values();
+
+            work_expired_at.max(break_expired_at)
+        }
+        None => Utc::now(),
+    };
+
+    let notification = get_new_notification(matches, id_manager, created_at)?;
+    let notification = match notification {
+        Some(n) => n,
+        None => return Ok(()),
+    };
+    let id = notification.get_id();
+    db::create_notification(glue.clone(), &notification).await;
+
+    let handle = spawn_notification(
+        configuration.clone(),
+        hash_map.clone(),
+        glue.clone(),
+        notification,
+    );
+    let mut hash_map = hash_map.lock().unwrap();
+    hash_map.insert(id, handle);
+    println!(
+        "{}",
+        format!("Notification (id: {}) created and queued", id)
+    );
     Ok(())
 }
 
@@ -276,7 +328,7 @@ fn spawn_notification(
     notification: Notification,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
-        let (id, _,  work_time, break_time, _, _, _) = notification.get_values();
+        let (id, _, work_time, break_time, _, _, _) = notification.get_values();
         debug!("id: {}, task started", id);
 
         if work_time > 0 {
