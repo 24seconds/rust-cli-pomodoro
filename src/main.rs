@@ -182,13 +182,8 @@ fn read_command() -> String {
     command
 }
 
-async fn create_notification(
-    matches: &ArgMatches<'_>,
-    configuration: &Arc<Configuration>,
-    hash_map: &Arc<Mutex<TaskMap>>,
-    glue: &ArcGlue,
-    id_manager: &mut u16,
-) -> Result<(), Box<dyn Error>> {
+
+fn get_new_notification(matches: &ArgMatches<'_>, id_manager: &mut u16,) -> Result<Option<Notification>, Box<dyn Error>> {
     let (work_time, break_time) = if matches.is_present("default") {
         (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
     } else {
@@ -205,19 +200,36 @@ async fn create_notification(
         eprintln!("work_time and break_time both can not be zero both");
         // TODO: This shouldn't return Ok, since it is an error, but for now,
         // is just a "temporal fix" for returning from the function.
-        return Ok(());
+        return Ok(None);
     }
 
     let id = get_new_id(id_manager);
-    db::create_notification(glue.clone(), &Notification::new(id, work_time, break_time)).await;
+
+    Ok(Some(Notification::new(id, work_time, break_time)))
+}
+
+async fn create_notification(
+    matches: &ArgMatches<'_>,
+    configuration: &Arc<Configuration>,
+    hash_map: &Arc<Mutex<TaskMap>>,
+    glue: &ArcGlue,
+    id_manager: &mut u16,
+) -> Result<(), Box<dyn Error>> {
+
+    let notification = get_new_notification(matches, id_manager)?;
+    let notification = match notification {
+        Some(n) => n,
+        None => return Ok(())
+    };
+    let id = notification.get_id();
+
+    db::create_notification(glue.clone(), &notification).await;
 
     let handle = spawn_notification(
-        id,
-        work_time,
-        break_time,
         configuration.clone(),
         hash_map.clone(),
         glue.clone(),
+        notification,
     );
     let mut hash_map = hash_map.lock().unwrap();
     hash_map.insert(id, handle);
@@ -258,14 +270,13 @@ async fn delete_notification(
 }
 
 fn spawn_notification(
-    id: u16,
-    work_time: u16,
-    break_time: u16,
     configuration: Arc<Configuration>,
     hash_map: Arc<Mutex<TaskMap>>,
     glue: ArcGlue,
+    notification: Notification,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
+        let (id, _,  work_time, break_time, _, _, _) = notification.get_values();
         debug!("id: {}, task started", id);
 
         if work_time > 0 {

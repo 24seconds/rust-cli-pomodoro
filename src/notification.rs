@@ -10,9 +10,12 @@ use tabled::Tabled;
 
 use crate::configuration::{Configuration, SLACK_API_URL};
 
+/// The notification schema used to store to database
 pub struct Notification {
     id: u16,
     description: String,
+    work_time: u16,
+    break_time: u16,
     created_at: DateTime<Utc>,
     work_expired_at: DateTime<Utc>,
     break_expired_at: DateTime<Utc>,
@@ -26,17 +29,35 @@ impl<'a> Notification {
 
         Notification {
             id,
-            created_at: utc,
             description: String::from("sample"),
+            work_time,
+            break_time,
+            created_at: utc,
             work_expired_at,
             break_expired_at,
         }
     }
 
-    pub fn get_values(&'a self) -> (u16, &'a str, DateTime<Utc>, DateTime<Utc>, DateTime<Utc>) {
+    pub fn get_id(&self) -> u16 {
+        self.id
+    }
+
+    pub fn get_values(
+        &'a self,
+    ) -> (
+        u16,
+        &'a str,
+        u16,
+        u16,
+        DateTime<Utc>,
+        DateTime<Utc>,
+        DateTime<Utc>,
+    ) {
         (
             self.id,
             self.description.as_str(),
+            self.work_time,
+            self.break_time,
             self.created_at,
             self.work_expired_at,
             self.break_expired_at,
@@ -58,21 +79,35 @@ impl<'a> Notification {
             }
         };
 
-        let created_at = match &row.get(2).unwrap() {
+        let work_time = match &row.get(2).unwrap() {
+            Value::I64(t) => *t as u16,
+            _ => {
+                panic!("notification work_time type mismatch")
+            }
+        };
+
+        let break_time = match &row.get(3).unwrap() {
+            Value::I64(t) => *t as u16,
+            _ => {
+                panic!("notification break_time type mismatch")
+            }
+        };
+
+        let created_at = match &row.get(4).unwrap() {
             Value::Timestamp(t) => Utc.from_local_datetime(t).unwrap(),
             _ => {
                 panic!("notification created_at type mismatch");
             }
         };
 
-        let work_expired_at = match &row.get(3).unwrap() {
+        let work_expired_at = match &row.get(5).unwrap() {
             Value::Timestamp(t) => Utc.from_local_datetime(t).unwrap(),
             _ => {
                 panic!("notification work_expired_at type mismatch");
             }
         };
 
-        let break_expired_at = match &row.get(4).unwrap() {
+        let break_expired_at = match &row.get(6).unwrap() {
             Value::Timestamp(t) => Utc.from_local_datetime(t).unwrap(),
             _ => {
                 panic!("notification break_expired_at type mismatch");
@@ -82,6 +117,8 @@ impl<'a> Notification {
         Notification {
             id,
             description,
+            work_time,
+            break_time,
             created_at,
             work_expired_at,
             break_expired_at,
