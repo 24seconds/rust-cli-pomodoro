@@ -20,6 +20,7 @@ pub async fn initialize(glue: Arc<Mutex<Glue<Key, MemoryStorage>>>) {
         r#"
         CREATE TABLE notifications (
             id INTEGER, description TEXT, 
+            work_time INTEGER, break_time INTEGER, 
             created_at TIMESTAMP, 
             work_expired_at TIMESTAMP, break_expired_at TIMESTAMP,
         );"#,
@@ -35,14 +36,17 @@ pub async fn initialize(glue: Arc<Mutex<Glue<Key, MemoryStorage>>>) {
 pub async fn create_notification(glue: ArcGlue, notification: &Notification) {
     let mut glue = glue.lock().unwrap();
 
-    let (id, desc, created_at, w_expired_at, b_expired_at) = notification.get_values();
+    let (id, desc, work_time, break_time, created_at, w_expired_at, b_expired_at) =
+        notification.get_values();
 
     let sql = format!(
         r#"
-        INSERT INTO notifications VALUES ({}, '{}', '{}', '{}', '{}');
+        INSERT INTO notifications VALUES ({}, '{}', {}, {}, '{}', '{}', '{}');
     "#,
         id,
         desc,
+        work_time,
+        break_time,
         created_at.to_rfc3339_opts(SecondsFormat::Millis, true),
         w_expired_at.to_rfc3339_opts(SecondsFormat::Millis, true),
         b_expired_at.to_rfc3339_opts(SecondsFormat::Millis, true)
@@ -52,6 +56,36 @@ pub async fn create_notification(glue: ArcGlue, notification: &Notification) {
 
     let output = glue.execute(sql.as_str()).unwrap();
     debug!("output: {:?}", output);
+}
+
+pub async fn read_last_expired_notification(glue: ArcGlue) -> Option<Notification> {
+    let mut glue = glue.lock().unwrap();
+
+    let sql = String::from(
+        r#"
+        SELECT * FROM notifications ORDER BY break_expired_at DESC, work_expired_at DESC LIMIT 1;
+        "#,
+    );
+    debug!("sql: {:?}", sql);
+
+    let output = glue.execute(sql.as_str()).unwrap();
+    debug!("output: {:?}", output);
+
+    match output {
+        Payload::Select {
+            labels: _,
+            mut rows,
+        } => {
+            if rows.is_empty() {
+                None
+            } else {
+                Some(Notification::convert_to_notification(rows.swap_remove(0)))
+            }
+        }
+        _ => {
+            panic!("no such case!");
+        }
+    }
 }
 
 pub async fn read_notification(glue: ArcGlue, id: u16) -> Option<Notification> {

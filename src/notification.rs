@@ -10,33 +10,55 @@ use tabled::Tabled;
 
 use crate::configuration::{Configuration, SLACK_API_URL};
 
+/// The notification schema used to store to database
+#[derive(Debug)]
 pub struct Notification {
     id: u16,
     description: String,
+    work_time: u16,
+    break_time: u16,
     created_at: DateTime<Utc>,
     work_expired_at: DateTime<Utc>,
     break_expired_at: DateTime<Utc>,
 }
 
 impl<'a> Notification {
-    pub fn new(id: u16, work_time: u16, break_time: u16) -> Self {
-        let utc = Utc::now();
+    pub fn new(id: u16, work_time: u16, break_time: u16, created_at: DateTime<Utc>) -> Self {
+        let utc = created_at;
         let work_expired_at = utc + Duration::minutes(work_time as i64);
         let break_expired_at = work_expired_at + Duration::minutes(break_time as i64);
 
         Notification {
             id,
-            created_at: utc,
             description: String::from("sample"),
+            work_time,
+            break_time,
+            created_at: utc,
             work_expired_at,
             break_expired_at,
         }
     }
 
-    pub fn get_values(&'a self) -> (u16, &'a str, DateTime<Utc>, DateTime<Utc>, DateTime<Utc>) {
+    pub fn get_id(&self) -> u16 {
+        self.id
+    }
+
+    pub fn get_values(
+        &'a self,
+    ) -> (
+        u16,
+        &'a str,
+        u16,
+        u16,
+        DateTime<Utc>,
+        DateTime<Utc>,
+        DateTime<Utc>,
+    ) {
         (
             self.id,
             self.description.as_str(),
+            self.work_time,
+            self.break_time,
             self.created_at,
             self.work_expired_at,
             self.break_expired_at,
@@ -58,21 +80,35 @@ impl<'a> Notification {
             }
         };
 
-        let created_at = match &row.get(2).unwrap() {
+        let work_time = match &row.get(2).unwrap() {
+            Value::I64(t) => *t as u16,
+            _ => {
+                panic!("notification work_time type mismatch")
+            }
+        };
+
+        let break_time = match &row.get(3).unwrap() {
+            Value::I64(t) => *t as u16,
+            _ => {
+                panic!("notification break_time type mismatch")
+            }
+        };
+
+        let created_at = match &row.get(4).unwrap() {
             Value::Timestamp(t) => Utc.from_local_datetime(t).unwrap(),
             _ => {
                 panic!("notification created_at type mismatch");
             }
         };
 
-        let work_expired_at = match &row.get(3).unwrap() {
+        let work_expired_at = match &row.get(5).unwrap() {
             Value::Timestamp(t) => Utc.from_local_datetime(t).unwrap(),
             _ => {
                 panic!("notification work_expired_at type mismatch");
             }
         };
 
-        let break_expired_at = match &row.get(4).unwrap() {
+        let break_expired_at = match &row.get(6).unwrap() {
             Value::Timestamp(t) => Utc.from_local_datetime(t).unwrap(),
             _ => {
                 panic!("notification break_expired_at type mismatch");
@@ -82,6 +118,8 @@ impl<'a> Notification {
         Notification {
             id,
             description,
+            work_time,
+            break_time,
             created_at,
             work_expired_at,
             break_expired_at,
@@ -121,12 +159,30 @@ impl Tabled for Notification {
             }
         };
 
-        let local_time: DateTime<Local> = utc.into();
+        let local_time: DateTime<Local> = self.created_at.into();
         let created_at = local_time.format("%F %T %z").to_string();
 
         let description = self.description.to_string();
 
-        vec![id, work_remaining, break_remaining, created_at, description]
+        let work_expired_at = {
+            let local_time: DateTime<Local> = self.work_expired_at.into();
+            local_time.format("%F %T %z").to_string()
+        };
+
+        let break_expired_at = {
+            let local_time: DateTime<Local> = self.break_expired_at.into();
+            local_time.format("%F %T %z").to_string()
+        };
+
+        vec![
+            id,
+            work_remaining,
+            break_remaining,
+            created_at,
+            work_expired_at,
+            break_expired_at,
+            description,
+        ]
     }
 
     fn headers() -> Vec<String> {
@@ -135,6 +191,8 @@ impl Tabled for Notification {
             "work_remaining (min)",
             "break_remaining (min)",
             "created_at",
+            "expired_at (work)",
+            "expired_at (break)",
             "description",
         ]
         .into_iter()
