@@ -334,6 +334,11 @@ fn spawn_notification(
         let (id, _, work_time, break_time, _, _, _) = notification.get_values();
         debug!("id: {}, task started", id);
 
+        let before_start_remaining = (notification.get_start_at() - Utc::now()).num_seconds();
+        let before = tokio::time::Duration::from_secs(before_start_remaining as u64);
+        debug!("before_start_remaining: {:?}", before_start_remaining);
+        sleep(before).await;
+
         if work_time > 0 {
             let wt = tokio::time::Duration::from_secs(work_time as u64 * 60);
             sleep(wt).await;
