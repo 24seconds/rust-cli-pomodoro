@@ -4,7 +4,7 @@ use gluesql::{
     storages::memory_storage::Key,
 };
 use std::sync::{Arc, Mutex};
-use tabled::Table;
+use tabled::{Table, Style};
 
 use crate::notification::Notification;
 use crate::ArcGlue;
@@ -135,7 +135,7 @@ pub async fn list_notification(glue: ArcGlue) {
         Payload::Select { labels: _, rows } => {
             let notifications = rows.into_iter().map(Notification::convert_to_notification);
 
-            let table = Table::new(notifications).to_string();
+            let table = Table::new(notifications).with(Style::pseudo_clean()).to_string();
 
             info!("\n{}", table);
         }
