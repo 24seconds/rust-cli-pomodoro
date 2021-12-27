@@ -42,6 +42,13 @@ impl<'a> Notification {
         self.id
     }
 
+    pub fn get_start_at(&self) -> DateTime<Utc> {
+        let last_expired_at = self.work_expired_at.max(self.break_expired_at);
+        let duration = Duration::minutes((self.work_time + self.break_time) as i64);
+
+        last_expired_at - duration
+    }
+
     pub fn get_values(
         &'a self,
     ) -> (
@@ -163,10 +170,7 @@ impl Tabled for Notification {
         };
 
         let start_at = {
-            let last_expired_at = self.work_expired_at.max(self.break_expired_at);
-            let duration = Duration::minutes((self.work_time + self.break_time) as i64);
-
-            let local_time: DateTime<Local> = (last_expired_at - duration).into();
+            let local_time: DateTime<Local> = self.get_start_at().into();
             local_time.format("%F %T %z").to_string()
         };
 
