@@ -257,6 +257,28 @@ async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>)
     debug!("resp: {:?}", resp);
 }
 
+async fn notify_discord(message: &'static str, configuration: &Arc<Configuration>) {
+    let webhook_url = match configuration.get_discord_webhook_url() {
+        Some(url) => url,
+        None => {
+            debug!("webhook_url is none");
+            return;
+        }
+    };
+
+    let body = json!({ "content": message }).to_string();
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(webhook_url)
+        .header("Content-Type", "application/json")
+        .body(body)
+        .send()
+        .await;
+
+    debug!("resp: {:?}", resp);
+}
+
 pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error> {
     let mut notification = NR_Notification::new();
     let notification = notification
@@ -277,6 +299,9 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error
 
     // use slack notification if configuration specified
     notify_slack("work done. Take a rest!", configuration).await;
+
+    // use discord webhook notification if configuration specified
+    notify_discord("work done. Take a rest!", configuration).await;
 
     Ok(())
 }
@@ -300,6 +325,9 @@ pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<(), Erro
 
     // use slack notification if configuration specified
     notify_slack("break done. Get back to work", configuration).await;
+
+    // use discord webhook notification if configuration specified
+    notify_discord("break done. Get back to work", configuration).await;
 
     Ok(())
 }
