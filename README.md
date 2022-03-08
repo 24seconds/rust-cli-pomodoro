@@ -69,14 +69,22 @@ cargo run --release
 
 ### Using credential.json
 pomodoro support slack notification.
-To use it, you need to create `credential.json` file in somewhere in your local machine. `credential.json` should have two keys, `token` and `channel`.
+To use it, you need to create `credential.json` file in somewhere in your local machine. `credential.json` supports two keys, `slack` and `discrod`.
+The `slack` and `discord` value is json. It looks like this
 
 ```json
 {
-  "token": "your-slack-token-string",
-  "channel": "your-slack-channel-id"
+  "slack": {
+      "token": "your-bot-token-string",
+      "channel": "your-slac-channel-id"
+  },
+  "discord": {
+      "webhook_url": "your-webhook-url"
+  }
 }
 ```
+
+For the slack notification, It uses [chat.PostMessage API](https://api.slack.com/methods/chat.postMessage)
 
 To run pomodoro with `credential.json`, run the app like this.
 ```sh
