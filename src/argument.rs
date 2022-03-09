@@ -113,3 +113,30 @@ fn add_args_for_creation<'a>(app: App<'a, 'a>) -> App<'a, 'a> {
 
     app
 }
+
+#[cfg(test)]
+mod tests {
+    use clap::{App, Arg};
+
+    use super::{get_app, parse_arg};
+
+    #[test]
+    fn test_parse_arg() {
+        let m = App::new("myapp")
+            .arg(Arg::with_name("id").takes_value(true))
+            .get_matches_from("myapp abc".split_whitespace());
+        
+        // parse as expected
+        let id = parse_arg::<String>(&m, "id").unwrap_or_else(|e| panic!("An error occurs: {}", e));
+        assert!(id.eq("abc"));
+
+        let m = App::new("myapp")
+            .arg(Arg::with_name("id").takes_value(true))
+            .get_matches_from("myapp abc".split_whitespace());
+    
+        // error when parsing
+        let id = parse_arg::<u16>(&m, "id");
+        assert!(id.is_err());
+        assert!(id.err().unwrap().to_string().contains("failed to parse arg"));
+    }
+}
