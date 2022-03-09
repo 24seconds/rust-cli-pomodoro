@@ -11,19 +11,43 @@ pub const SLACK_API_URL: &str = "https://slack.com/api/chat.postMessage";
 
 #[derive(Deserialize, Debug, Default)]
 pub struct Configuration {
-    #[serde(rename(deserialize = "token"))]
-    slack_token: Option<String>,
-    #[serde(rename(deserialize = "channel"))]
-    slack_channel: Option<String>,
+    #[serde(rename(deserialize = "slack"))]
+    slack_configuration: Option<SlackConfiguration>,
+    #[serde(rename(deserialize = "discord"))]
+    discord_configuration: Option<DiscordConfiguration>,
+}
+
+#[derive(Deserialize, Debug, Default)]
+struct SlackConfiguration {
+    token: Option<String>,
+    channel: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Default)]
+struct DiscordConfiguration {
+    webhook_url: Option<String>,
 }
 
 impl Configuration {
     pub fn get_slack_token(&self) -> &Option<String> {
-        &self.slack_token
+        match &self.slack_configuration {
+            Some(config) => &config.token,
+            None => &None,
+        }
     }
 
     pub fn get_slack_channel(&self) -> &Option<String> {
-        &self.slack_channel
+        match &self.slack_configuration {
+            Some(config) => &config.channel,
+            None => &None,
+        }
+    }
+
+    pub fn get_discord_webhook_url(&self) -> &Option<String> {
+        match &self.discord_configuration {
+            Some(config) => &config.webhook_url,
+            None => &None,
+        }
     }
 }
 
