@@ -139,7 +139,7 @@ async fn analyze_input(
             println!("Notification Test called");
         }
         (CLEAR, Some(_)) => {
-            print!("\x1B[2J");
+            print!("\x1B[2J\x1B[1;1H");
         }
         (EXIT, Some(_)) => {
             process::exit(0);
