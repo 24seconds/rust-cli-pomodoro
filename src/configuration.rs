@@ -81,3 +81,52 @@ fn get_configuration_from_file<P: AsRef<Path> + AsRef<OsStr>>(
     let c = serde_json::from_reader(reader)?;
     Ok(c)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::{get_configuration_from_file, initialize_configuration};
+
+    #[test]
+    fn test_initialize_configuration_some() {
+        let file = PathBuf::from("resources/test/mock_credential.json");
+        let file = file.to_str();
+
+        let result = initialize_configuration(file);
+        assert_eq!(true, result.is_ok());
+        let config = result.unwrap();
+
+        let slack_token = config.get_slack_token();
+        assert_eq!(true, slack_token.is_some());
+        assert!(slack_token.as_ref().unwrap().eq("your-bot-token-string"));
+
+        let slack_channel = config.get_slack_channel();
+        assert_eq!(true, slack_channel.is_some());
+        assert!(slack_channel.as_ref().unwrap().eq("your-slack-channel-id"));
+
+        let discord_webhook_url = config.get_discord_webhook_url();
+        assert_eq!(true, discord_webhook_url.is_some());
+        assert!(discord_webhook_url.as_ref().unwrap().eq("your-webhook-url"));
+    }
+
+    #[test]
+    fn test_initialize_configuration_none() {
+        [PathBuf::from("wrong_path").to_str(), None]
+            .into_iter()
+            .for_each(|file| {
+                let result = initialize_configuration(file);
+                assert_eq!(true, result.is_ok());
+                let config = result.unwrap();
+
+                let slack_token = config.get_slack_token();
+                assert_eq!(true, slack_token.is_none());
+
+                let slack_channel = config.get_slack_channel();
+                assert_eq!(true, slack_channel.is_none());
+
+                let discord_webhook_url = config.get_discord_webhook_url();
+                assert_eq!(true, discord_webhook_url.is_none());
+            });
+    }
+}
