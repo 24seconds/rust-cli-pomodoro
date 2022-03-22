@@ -76,7 +76,7 @@ The `slack` and `discord` value is json. It looks like this
 {
   "slack": {
       "token": "your-bot-token-string",
-      "channel": "your-slac-channel-id"
+      "channel": "your-slack-channel-id"
   },
   "discord": {
       "webhook_url": "your-webhook-url"
