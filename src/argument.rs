@@ -118,7 +118,13 @@ fn add_args_for_creation<'a>(app: App<'a, 'a>) -> App<'a, 'a> {
 mod tests {
     use clap::{App, Arg};
 
-    use super::{get_app, parse_arg};
+    use super::{get_app, parse_arg, add_args_for_creation, get_config_app};
+
+    #[test]
+    fn test_get_app() {
+        let app = get_app();
+        assert_eq!(app.get_name(), "pomodoro");
+    }
 
     #[test]
     fn test_parse_arg() {
@@ -138,5 +144,33 @@ mod tests {
         let id = parse_arg::<u16>(&m, "id");
         assert!(id.is_err());
         assert!(id.err().unwrap().to_string().contains("failed to parse arg"));
+    }
+
+    #[test]
+    fn test_add_args_for_creation() {
+        // test work and break
+        let app = App::new("myapp");
+        let matches = add_args_for_creation(app)
+            .get_matches_from("myapp -w 25 -b 5".split_whitespace());
+        
+        let work = matches.value_of("work").unwrap();
+        assert!(work.eq("25"));
+        let r#break = matches.value_of("break").unwrap();
+        assert!(r#break.eq("5"));
+
+        // test default
+        let app = App::new("myapp");
+        let matches = add_args_for_creation(app)
+            .get_matches_from("myapp -d".split_whitespace());
+
+        assert!(matches.is_present("default"));
+    }
+
+    #[test]
+    fn test_config_app() {
+        let app = get_config_app()
+            .get_matches_from("pomodoro -c credential.json".split_whitespace());
+        let config = app.value_of("config").unwrap();
+        assert_eq!(config, "credential.json");
     }
 }
