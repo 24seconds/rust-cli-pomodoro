@@ -18,6 +18,7 @@ mod database;
 mod notification;
 use database as db;
 mod configuration;
+mod logging;
 
 use crate::argument::{
     parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, Q,
@@ -34,7 +35,7 @@ type ArcGlue = Arc<Mutex<Glue<Key, MemoryStorage>>>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    initialize_logging();
+    logging::initialize_logging();
 
     let config_matches = argument::get_config_app().get_matches();
     let credential_file_path = config_matches.value_of("config");
@@ -155,25 +156,6 @@ async fn analyze_input(
         _ => (),
     };
     Ok(())
-}
-
-fn get_package_name() -> String {
-    let package_name = env!("CARGO_PKG_NAME");
-    package_name.replace('-', "_")
-}
-
-fn initialize_logging() {
-    let package_name = &get_package_name();
-
-    if cfg!(debug_assertions) {
-        env_logger::Builder::from_default_env()
-            .filter(Some(package_name), log::LevelFilter::Debug)
-            .init();
-    } else {
-        env_logger::Builder::from_default_env()
-            .filter(Some(package_name), log::LevelFilter::Info)
-            .init();
-    }
 }
 
 fn get_new_id(id_manager: &mut u16) -> u16 {
