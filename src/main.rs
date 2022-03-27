@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
 use clap::ArgMatches;
 use gluesql::{
+    memory_storage::Key,
     prelude::{Glue, MemoryStorage},
-    storages::memory_storage::Key,
 };
 use std::collections::HashMap;
 use std::error::Error;
@@ -109,8 +109,8 @@ async fn analyze_input(
                 let result = delete_notification(id, hash_map.clone(), glue.clone()).await;
 
                 match result {
-                    Ok(_) => println!("{}", format!("Notification (id: {}) deleted", id)),
-                    Err(e) => eprintln!("{}", format!("Error: {}", e)),
+                    Ok(_) => println!("Notification (id: {}) deleted", id),
+                    Err(e) => eprintln!("Error: {}", e),
                 };
                 debug!("Message::Delete done");
             } else {
@@ -151,7 +151,7 @@ async fn analyze_input(
 
 fn get_package_name() -> String {
     let package_name = env!("CARGO_PKG_NAME");
-    package_name.replace("-", "_")
+    package_name.replace('-', "_")
 }
 
 fn initialize_logging() {
@@ -245,7 +245,7 @@ async fn create_notification(
     );
     let mut hash_map = hash_map.lock().unwrap();
     hash_map.insert(id, handle);
-    println!("{}", format!("Notification (id: {}) created", id));
+    println!("Notification (id: {}) created", id);
     Ok(())
 }
 
@@ -285,10 +285,7 @@ async fn queue_notification(
     );
     let mut hash_map = hash_map.lock().unwrap();
     hash_map.insert(id, handle);
-    println!(
-        "{}",
-        format!("Notification (id: {}) created and queued", id)
-    );
+    println!("Notification (id: {}) created and queued", id);
     Ok(())
 }
 
