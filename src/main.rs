@@ -18,6 +18,7 @@ mod database;
 mod notification;
 use database as db;
 mod configuration;
+mod input_handler;
 mod logging;
 
 use crate::argument::{
@@ -54,7 +55,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     loop {
         debug!("inside spawn blocking");
-        let command = read_command();
+        let command = input_handler::read_command(&mut io::stdout(), &mut io::stdin().lock());
+
         debug!("user input: {}", &command);
         if let Err(e) =
             analyze_input(&command, &mut id_manager, &hash_map, &glue, &configuration).await
@@ -163,21 +165,6 @@ fn get_new_id(id_manager: &mut u16) -> u16 {
     *id_manager += 1;
 
     id
-}
-
-fn read_command() -> String {
-    print!("> ");
-    io::stdout().flush().expect("could not flush stdout");
-
-    let mut command = String::new();
-
-    io::stdin()
-        .read_line(&mut command)
-        .expect("Failed to read line");
-
-    let command = command.trim().to_string();
-
-    command
 }
 
 fn get_new_notification(
