@@ -9,6 +9,7 @@ use std::error::Error;
 use std::io::{self, Write};
 use std::process;
 use std::sync::{Arc, Mutex};
+use tabled::{Style, TableIteratorExt};
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
@@ -127,10 +128,17 @@ async fn analyze_input(
             }
         }
         (LS, Some(_)) | (LIST, Some(_)) => {
-            debug!("Message::Query called!");
-            db::list_notification(glue.clone()).await;
-            debug!("Message::Query done");
-            println!("Query succeed");
+            debug!("Message::List called!");
+            let notifications = db::list_notification(glue.clone()).await;
+            debug!("Message::List done");
+
+            let table = notifications
+                .table()
+                .with(Style::modern().horizontal_off())
+                .to_string();
+            info!("\n{}", table);
+
+            println!("List succeed");
         }
         (TEST, Some(_)) => {
             debug!("Message:NotificationTest called!");
@@ -352,7 +360,10 @@ fn spawn_notification(
             let _ = notify_break(&configuration).await;
         }
 
-        let _ = delete_notification(id, hash_map, glue.clone()).await;
+        let result = delete_notification(id, hash_map, glue.clone()).await;
+        if result.is_err() {
+            trace!("error occurred while deleting notification");
+        }
 
         debug!("id: {}, notification work time done!", id);
     })
