@@ -1,7 +1,7 @@
 use chrono::SecondsFormat;
 use gluesql::{
+    memory_storage::Key,
     prelude::{Glue, MemoryStorage, Payload},
-    storages::memory_storage::Key,
 };
 use std::sync::{Arc, Mutex};
 use tabled::{Style, Table};

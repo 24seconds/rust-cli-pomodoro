@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
 use clap::ArgMatches;
 use gluesql::{
+    memory_storage::Key,
     prelude::{Glue, MemoryStorage},
-    storages::memory_storage::Key,
 };
 use std::collections::HashMap;
 use std::error::Error;
