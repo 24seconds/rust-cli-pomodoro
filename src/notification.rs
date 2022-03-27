@@ -134,6 +134,8 @@ impl<'a> Notification {
 }
 
 impl Tabled for Notification {
+    const LENGTH: usize = 7;
+
     fn fields(&self) -> Vec<String> {
         let utc = Utc::now();
 
