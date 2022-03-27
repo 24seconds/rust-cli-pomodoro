@@ -333,3 +333,105 @@ pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<(), Erro
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+    use gluesql::core::data::Value;
+    use tabled::Tabled;
+
+    use super::Notification;
+
+    #[test]
+    fn test_notification() {
+        let now = Utc::now();
+        let notification1 = Notification::new(0, 25, 5, now);
+        assert_eq!(
+            now.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+            notification1
+                .get_start_at()
+                .to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+        );
+
+        let notification2 = {
+            let naive_date_time = {
+                let date = NaiveDate::from_ymd(2022, 3, 27);
+                let time = NaiveTime::from_hms_milli(16, 08, 56, 789);
+
+                NaiveDateTime::new(date, time)
+            };
+            let row = vec![
+                Value::I64(0),
+                Value::Str("sample".to_string()),
+                Value::I64(25),
+                Value::I64(5),
+                Value::Timestamp(naive_date_time),
+                Value::Timestamp(naive_date_time + Duration::minutes(25)),
+                Value::Timestamp(naive_date_time + Duration::minutes(30)),
+            ];
+
+            Notification::convert_to_notification(row)
+        };
+
+        let test_cases = vec![
+            ("notification::new test", notification1),
+            ("notification::convert_to_notification test", notification2),
+        ];
+
+        test_cases.into_iter().for_each(|pair| {
+            let (test_case, notification) = pair;
+
+            assert_eq!(0, notification.get_id());
+            let (id, desc, wt, bt, _, w_expired_at, b_expired_at) = notification.get_values();
+            assert_eq!(0, id, "failed: {}", test_case);
+            assert_eq!("sample", desc, "failed: {}", test_case);
+            assert_eq!(25, wt, "failed: {}", test_case);
+            assert_eq!(5, bt, "failed: {}", test_case);
+
+            let start_at = notification.get_start_at();
+
+            let expected_w_expired_at = start_at + Duration::minutes(25);
+            assert_eq!(
+                expected_w_expired_at.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+                w_expired_at.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+                "failed: {}",
+                test_case
+            );
+
+            let expected_b_expired_at = expected_w_expired_at + Duration::minutes(5);
+            assert_eq!(
+                expected_b_expired_at.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+                b_expired_at.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+                "failed: {}",
+                test_case
+            );
+        });
+    }
+
+    #[test]
+    fn test_notification_tabled_impl() {
+        let now = Utc::now();
+        let notification = Notification::new(0, 25, 5, now);
+
+        let fields = notification.fields();
+        assert_eq!(7, fields.len());
+
+        let headers = Notification::headers();
+        assert_eq!(7, headers.len());
+        assert_eq!(
+            vec![
+                "id".to_string(),
+                "work_remaining (min)".to_string(),
+                "break_remaining (min)".to_string(),
+                "start_at".to_string(),
+                "expired_at (work)".to_string(),
+                "expired_at (break)".to_string(),
+                "description".to_string(),
+            ],
+            headers
+        );
+    }
+
+    #[tokio::test]
+    async fn test_send_slack() {}
+}
