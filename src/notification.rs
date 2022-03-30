@@ -2,6 +2,7 @@ use chrono::{prelude::*, Duration};
 use gluesql::core::data::Value;
 use notify_rust::{error::Error, Hint, Notification as NR_Notification, Timeout as NR_Timeout};
 use serde_json::json;
+use tokio::join;
 
 #[cfg(target_os = "macos")]
 use std::process::Command;
@@ -300,10 +301,11 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error
     notify_terminal_notifier("work done. Take a rest!");
 
     // use slack notification if configuration specified
-    notify_slack("work done. Take a rest!", configuration).await;
-
+    let slack_fut = notify_slack("work done. Take a rest!", configuration);
     // use discord webhook notification if configuration specified
-    notify_discord("work done. Take a rest!", configuration).await;
+    let discord_fut = notify_discord("work done. Take a rest!", configuration);
+
+    join!(slack_fut, discord_fut);
 
     Ok(())
 }
@@ -326,10 +328,12 @@ pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<(), Erro
     notify_terminal_notifier("break done. Get back to work");
 
     // use slack notification if configuration specified
-    notify_slack("break done. Get back to work", configuration).await;
+    let slack_fut = notify_slack("break done. Get back to work", configuration);
 
     // use discord webhook notification if configuration specified
-    notify_discord("break done. Get back to work", configuration).await;
+    let discord_fut = notify_discord("break done. Get back to work", configuration);
+
+    join!(slack_fut, discord_fut);
 
     Ok(())
 }
