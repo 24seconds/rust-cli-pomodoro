@@ -84,7 +84,7 @@ where
     Ok(parsed)
 }
 
-fn add_args_for_creation<'a>(app: App<'a, 'a>) -> App<'a, 'a> {
+pub(crate) fn add_args_for_creation<'a>(app: App<'a, 'a>) -> App<'a, 'a> {
     let app = app
         .arg(
             Arg::with_name("work")

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use clap::ArgMatches;
 use gluesql::{
     memory_storage::Key,
@@ -6,7 +6,7 @@ use gluesql::{
 };
 use std::collections::HashMap;
 use std::error::Error;
-use std::io::{self, Write};
+use std::io::{self};
 use std::process;
 use std::sync::{Arc, Mutex};
 use tabled::{Style, TableIteratorExt};
@@ -21,10 +21,7 @@ mod configuration;
 mod input_handler;
 mod logging;
 
-use crate::argument::{
-    parse_arg, CLEAR, CREATE, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME, DELETE, EXIT, LIST, LS, Q,
-    QUEUE, TEST,
-};
+use crate::argument::{parse_arg, CLEAR, CREATE, DELETE, EXIT, LIST, LS, Q, QUEUE, TEST};
 use crate::configuration::{initialize_configuration, Configuration};
 use crate::notification::{notify_break, notify_work, Notification};
 
@@ -32,7 +29,7 @@ use crate::notification::{notify_break, notify_work, Notification};
 extern crate log;
 
 type TaskMap = HashMap<u16, JoinHandle<()>>;
-type ArcGlue = Arc<Mutex<Glue<Key, MemoryStorage>>>;
+pub type ArcGlue = Arc<Mutex<Glue<Key, MemoryStorage>>>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -98,10 +95,10 @@ async fn analyze_input(
 
     match matches.subcommand() {
         (CREATE, Some(sub_matches)) => {
-            create_notification(sub_matches, configuration, hash_map, glue, id_manager).await?;
+            handle_create(sub_matches, configuration, hash_map, glue, id_manager).await?;
         }
         (QUEUE, Some(sub_matches)) | (Q, Some(sub_matches)) => {
-            queue_notification(sub_matches, configuration, hash_map, glue, id_manager).await?;
+            handle_queue(sub_matches, configuration, hash_map, glue, id_manager).await?;
         }
         (DELETE, Some(sub_matches)) => {
             if sub_matches.is_present("id") {
@@ -131,23 +128,10 @@ async fn analyze_input(
             }
         }
         (LS, Some(_)) | (LIST, Some(_)) => {
-            debug!("Message::List called!");
-            let notifications = db::list_notification(glue.clone()).await;
-            debug!("Message::List done");
-
-            let table = notifications
-                .table()
-                .with(Style::modern().horizontal_off())
-                .to_string();
-            info!("\n{}", table);
-
-            println!("List succeed");
+            handle_list(glue).await;
         }
         (TEST, Some(_)) => {
-            debug!("Message:NotificationTest called!");
-            notify_work(&configuration.clone()).await?;
-            debug!("Message:NotificationTest done");
-            println!("Notification Test called");
+            handle_test(configuration).await?;
         }
         (CLEAR, Some(_)) => {
             print!("\x1B[2J\x1B[1;1H");
@@ -160,52 +144,37 @@ async fn analyze_input(
     Ok(())
 }
 
-fn get_new_id(id_manager: &mut u16) -> u16 {
-    let id = *id_manager;
-    *id_manager += 1;
+async fn handle_list(glue: &Arc<Mutex<Glue<Key, MemoryStorage>>>) {
+    debug!("Message::List called!");
+    let notifications = db::list_notification(glue.clone()).await;
+    debug!("Message::List done");
 
-    id
+    let table = notifications
+        .table()
+        .with(Style::modern().horizontal_off())
+        .to_string();
+    info!("\n{}", table);
+
+    println!("List succeed");
 }
 
-fn get_new_notification(
-    matches: &ArgMatches<'_>,
-    id_manager: &mut u16,
-    created_at: DateTime<Utc>,
-) -> Result<Option<Notification>, Box<dyn Error>> {
-    let (work_time, break_time) = if matches.is_present("default") {
-        (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
-    } else {
-        let work_time = parse_arg::<u16>(matches, "work")?;
-        let break_time = parse_arg::<u16>(matches, "break")?;
+async fn handle_test(configuration: &Arc<Configuration>) -> Result<(), Box<dyn Error>> {
+    debug!("Message:NotificationTest called!");
+    notify_work(&configuration.clone()).await?;
+    debug!("Message:NotificationTest done");
+    println!("Notification Test called");
 
-        (work_time, break_time)
-    };
-
-    debug!("work_time: {}", work_time);
-    debug!("break_time: {}", break_time);
-
-    if work_time == 0 && break_time == 0 {
-        eprintln!("work_time and break_time both can not be zero both");
-        // TODO: This shouldn't return Ok, since it is an error, but for now,
-        // is just a "temporal fix" for returning from the function.
-        return Ok(None);
-    }
-
-    let id = get_new_id(id_manager);
-
-    Ok(Some(Notification::new(
-        id, work_time, break_time, created_at,
-    )))
+    Ok(())
 }
 
-async fn create_notification(
+async fn handle_create(
     matches: &ArgMatches<'_>,
     configuration: &Arc<Configuration>,
     hash_map: &Arc<Mutex<TaskMap>>,
     glue: &ArcGlue,
     id_manager: &mut u16,
 ) -> Result<(), Box<dyn Error>> {
-    let notification = get_new_notification(matches, id_manager, Utc::now())?;
+    let notification = input_handler::get_new_notification(matches, id_manager, Utc::now())?;
     let notification = match notification {
         Some(n) => n,
         None => return Ok(()),
@@ -226,7 +195,7 @@ async fn create_notification(
     Ok(())
 }
 
-async fn queue_notification(
+async fn handle_queue(
     matches: &ArgMatches<'_>,
     configuration: &Arc<Configuration>,
     hash_map: &Arc<Mutex<TaskMap>>,
@@ -246,7 +215,7 @@ async fn queue_notification(
         None => Utc::now(),
     };
 
-    let notification = get_new_notification(matches, id_manager, created_at)?;
+    let notification = input_handler::get_new_notification(matches, id_manager, created_at)?;
     let notification = match notification {
         Some(n) => n,
         None => return Ok(()),
