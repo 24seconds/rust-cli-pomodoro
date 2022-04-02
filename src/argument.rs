@@ -29,21 +29,21 @@ pub fn get_config_app() -> App<'static, 'static> {
 pub fn get_app() -> App<'static, 'static> {
     App::new("pomodoro")
         .setting(AppSettings::NoBinaryName)
-        .version("0.0.1")
+        .version("1.0.0")
         .version_short("v")
         .author("Young")
         .about("manage your time!")
         .subcommands(vec![
             {
                 let cmd = SubCommand::with_name(CREATE);
+                add_args_for_creation(cmd).about("create the notification")
+            },
+            {
+                let cmd = SubCommand::with_name(QUEUE).about("queue the notification");
                 add_args_for_creation(cmd)
             },
             {
-                let cmd = SubCommand::with_name(QUEUE);
-                add_args_for_creation(cmd)
-            },
-            {
-                let cmd = SubCommand::with_name(Q);
+                let cmd = SubCommand::with_name(Q).about("queue the notification");
                 add_args_for_creation(cmd)
             },
             SubCommand::with_name(DELETE)
