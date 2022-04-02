@@ -161,11 +161,7 @@ pub async fn list_archived_notification(glue: ArcGlue) -> Vec<ArchivedNotificati
             .into_iter()
             // TODO(young): As of now archived_notifications schema is same as notifications table
             .map(Notification::convert_to_notification)
-            .map(|n| {
-                let archived_notification = ArchivedNotification::from(n);
-
-                archived_notification
-            })
+            .map(ArchivedNotification::from)
             .collect(),
         _ => {
             panic!("no such case!");
