@@ -26,15 +26,18 @@ For me, while I'm working I found intentional break time is needed for the bette
 A `notification` is consisted of work time and break time. Pomodoro manages timer using `notification`.
 
 - Create notification with customized work and break time
-- Pretty print created notifications
-- delete registered notification(s)
-- clear terminal
+- Queue the notification. Queued notification will start to run after previously registered notifications are finished
+- Customize notification. Refer [Using credential.json section](#Using-credential.json)
+- Pretty print created notifications using `list` command
+- Delete registered notification(s)
+- Track delete notification(s) using `history` command
+- Clear terminal
 
 for more features, run `pomodoro` and type `help`!
 
 
 ```md
-pomodoro 0.0.1
+pomodoro 1.0.0
 Young
 manage your time!
 
@@ -46,14 +49,17 @@ FLAGS:
     -v, --version    Prints version information
 
 SUBCOMMANDS:
-    clear     clear terminal
-    create    create a notification
-    delete    delete a notification
-    exit      exit pomodoro app
-    help      Prints this message or the help of the given subcommand(s)
-    list      list notifications long command
-    ls        list notifications short command
-    test      test notification
+    clear      clear terminal
+    create     create the notification
+    delete     delete a notification
+    exit       exit pomodoro app
+    help       Prints this message or the help of the given subcommand(s)
+    history    show archived notifications
+    list       list notifications long command
+    ls         list notifications short command
+    q          queue the notification
+    queue      queue the notification
+    test       test notification
 ```
 
 
@@ -89,17 +95,20 @@ For the slack notification, It uses [chat.PostMessage API](https://api.slack.com
 To run pomodoro with `credential.json`, run the app like this.
 ```sh
 # If the credential.json file exists in the current path
-rust-cli-pomodoro --config ./credential.json
+pomodoro --config ./credential.json
 ```
 
 
 ## RoadMap
 
 - [ ] Support mac os (>= 11.0.0) notification: Currently [notify-rust](https://github.com/hoodie/notify-rust) uses [mac-notification-sys](https://github.com/h4llow3En/mac-notification-sys) but `mac-notification_sys` doesn't support recent mac version (as of 17:10 Sun 17 Oct 2021)
-- [ ] Provide more notification delivery option: Currently pomodoro uses desktop notification. But notification could be delivered through slack, email or any kind of method.
+- [o] Provide more notification delivery option: Currently pomodoro uses desktop notification. But notification could be delivered through slack, email or any kind of method.
+    - [v] slack integration
+    - [v] discord integration
+    - what else?
 - [ ] Provide an easy way to use this app (brew, snap, cargo install, etc..)
 - [ ] More rich notification: sound, app icon, hint, action etc
-- [ ] Write test cases 
+- [o] Write test cases 
 
 ## Compatibility
 

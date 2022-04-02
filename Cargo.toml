@@ -1,7 +1,18 @@
 [package]
 name = "rust-cli-pomodoro"
-version = "0.1.0"
+version = "1.0.0"
+authors = ["24seconds <24crazyoung@gmail.com>"]
 edition = "2021"
+rust-version = "1.59"
+description = """
+rust-cli-pomodoro manages your time!
+"""
+homepage = "https://github.com/24seconds/rust-cli-pomodoro"
+repository = "https://github.com/24seconds/rust-cli-pomodoro"
+readme = "README.md"
+keywords = ["pomodoro", "notification", "terminal-app"]
+categories = ["command-line-utilities"]
+license = "Beerware"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

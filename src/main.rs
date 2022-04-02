@@ -81,10 +81,12 @@ async fn analyze_input(
                 // HelpDisplayed has help message in error
                 clap::ErrorKind::HelpDisplayed => {
                     print!("\n{}\n", err);
+                    return Ok(());
                 }
                 // clap automatically print version string with out newline.
                 clap::ErrorKind::VersionDisplayed => {
                     println!();
+                    return Ok(());
                 }
                 _ => {
                     print!("\n{}\n", err);
