@@ -11,7 +11,7 @@
 
 ## Demo
 
-<img src="assets/pomodoro_demo.png" />
+<img src="assets/pomodoro_demo.gif" />
 
 
 
