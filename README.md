@@ -4,7 +4,7 @@
 - [Demo](#demo)
 - [💡 Motivation](#motivation)
 - [📜 Features](#features)
-- [⌛ How to use](#how-to-use)
+- [⌛ Installation & How to use](#installation-and-how-to-use)
 - [🚧 RoadMap](#roadmap)
 - [🖥️ Compatibility](#compatibility)
 
@@ -63,14 +63,20 @@ SUBCOMMANDS:
 ```
 
 
-## How to use
+## Installation and How to use
 
-Currently just clone this repo and run `cargo run --release` or build your self and use binary as you wish.
+### Installation 
+1. Currently just clone this repo and run `cargo run --release` or build your self and use binary as you wish.
 
 ```sh
 git clone git@github.com:24seconds/rust-cli-pomodoro.git
 cd rust-cli-pomodoro
 cargo run --release
+```
+
+2. Use `cargo install rust-cli-pomodoro`
+```sh
+cargo install rust-cli-pomodoro
 ```
 
 ### Using credential.json
@@ -107,6 +113,7 @@ pomodoro --config ./credential.json
     - [v] discord integration
     - what else?
 - [ ] Provide an easy way to use this app (brew, snap, cargo install, etc..)
+    - [v] cargo install
 - [ ] More rich notification: sound, app icon, hint, action etc
 - [o] Write test cases 
 
