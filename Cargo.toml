@@ -13,6 +13,7 @@ readme = "README.md"
 keywords = ["pomodoro", "notification", "terminal-app"]
 categories = ["command-line-utilities"]
 license = "Beerware"
+exclude = ["/assets"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
