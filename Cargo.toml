@@ -18,3 +18,7 @@ tabled = "0.5.0"
 serde_json = "1.0.59"
 serde = "1.0.130"
 reqwest = { version = "0.11", features = ["json"] }
+
+[[bin]]
+name = "pomodoro"
+path = "src/main.rs"
