@@ -13,6 +13,7 @@ use tabled::{Style, TableIteratorExt};
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
+mod archived_notification;
 mod argument;
 mod database;
 mod notification;
@@ -130,6 +131,9 @@ async fn analyze_input(
         (LS, Some(_)) | (LIST, Some(_)) => {
             handle_list(glue).await;
         }
+        (HISTORY, Some(_)) => {
+            handle_history(glue).await;
+        }
         (TEST, Some(_)) => {
             handle_test(configuration).await?;
         }
@@ -156,6 +160,20 @@ async fn handle_list(glue: &Arc<Mutex<Glue<Key, MemoryStorage>>>) {
     info!("\n{}", table);
 
     println!("List succeed");
+}
+
+async fn handle_history(glue: &Arc<Mutex<Glue<Key, MemoryStorage>>>) {
+    debug!("Message:History called!");
+    let archived_notifications = db::list_archived_notification(glue.clone()).await;
+    debug!("Message:History done!");
+
+    let table = archived_notifications
+        .table()
+        .with(Style::modern().horizontal_off())
+        .to_string();
+    info!("\n{}", table);
+
+    println!("History succeed");
 }
 
 async fn handle_test(configuration: &Arc<Configuration>) -> Result<(), Box<dyn Error>> {
@@ -262,7 +280,7 @@ async fn delete_notification(
             .ok_or(format!("failed to remove id ({})", id))?;
     }
 
-    db::delete_notification(glue, id).await;
+    db::delete_and_archive_notification(glue, id).await;
 
     Ok(())
 }

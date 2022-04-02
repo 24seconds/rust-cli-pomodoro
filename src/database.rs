@@ -5,8 +5,8 @@ use gluesql::{
 };
 use std::sync::{Arc, Mutex};
 
-use crate::notification::Notification;
 use crate::ArcGlue;
+use crate::{archived_notification::ArchivedNotification, notification::Notification};
 
 pub fn get_memory_glue() -> Glue<Key, MemoryStorage> {
     let storage = MemoryStorage::default();
@@ -21,6 +21,13 @@ pub async fn initialize(glue: Arc<Mutex<Glue<Key, MemoryStorage>>>) {
         "DROP TABLE IF EXISTS notifications;",
         r#"
         CREATE TABLE notifications (
+            id INTEGER, description TEXT, 
+            work_time INTEGER, break_time INTEGER, 
+            created_at TIMESTAMP, 
+            work_expired_at TIMESTAMP, break_expired_at TIMESTAMP,
+        );"#,
+        r#"DROP TABLE IF EXISTS archived_notifications;"#,
+        r#"CREATE TABLE archived_notifications (
             id INTEGER, description TEXT, 
             work_time INTEGER, break_time INTEGER, 
             created_at TIMESTAMP, 
@@ -141,6 +148,37 @@ pub async fn list_notification(glue: ArcGlue) -> Vec<Notification> {
     }
 }
 
+pub async fn list_archived_notification(glue: ArcGlue) -> Vec<ArchivedNotification> {
+    let mut glue = glue.lock().unwrap();
+
+    let sql = "SELECT * FROM archived_notifications ORDER BY id DESC;";
+
+    let output = glue.execute(sql).unwrap();
+    debug!("output: {:?}", output);
+
+    match output {
+        Payload::Select { labels: _, rows } => rows
+            .into_iter()
+            // TODO(young): As of now archived_notifications schema is same as notifications table
+            .map(Notification::convert_to_notification)
+            .map(|n| {
+                let archived_notification = ArchivedNotification::from(n);
+
+                archived_notification
+            })
+            .collect(),
+        _ => {
+            panic!("no such case!");
+        }
+    }
+}
+
+pub async fn delete_and_archive_notification(glue: ArcGlue, id: u16) {
+    archive_notification(glue.clone(), id).await;
+    delete_notification(glue.clone(), id).await;
+}
+
+//TODO(young): Handle error?
 pub async fn delete_notification(glue: ArcGlue, id: u16) {
     let mut glue = glue.lock().unwrap();
 
@@ -170,6 +208,24 @@ pub async fn delete_notification(glue: ArcGlue, id: u16) {
     debug!("output: {:?}", output);
 }
 
+//TODO(young): Handle error?
+pub async fn archive_notification(glue: ArcGlue, id: u16) {
+    let mut glue = glue.lock().unwrap();
+
+    let sql = format!(
+        r#"
+    INSERT INTO archived_notifications
+    SELECT * FROM notifications WHERE id = {};
+    "#,
+        id
+    );
+
+    debug!("sql: {:?}", sql);
+
+    let output = glue.execute(sql.as_str()).unwrap();
+    debug!("output: {:?}", output);
+}
+
 pub async fn delete_all_notification(glue: ArcGlue) {
     let mut glue = glue.lock().unwrap();
 
@@ -190,8 +246,9 @@ mod tests {
     use gluesql::prelude::{Payload, PayloadVariable};
 
     use super::{
-        create_notification, delete_all_notification, delete_notification, get_memory_glue,
-        initialize, list_notification, read_last_expired_notification, read_notification,
+        archive_notification, create_notification, delete_all_notification, delete_notification,
+        get_memory_glue, initialize, list_archived_notification, list_notification,
+        read_last_expired_notification, read_notification,
     };
     use std::{
         panic,
@@ -207,9 +264,12 @@ mod tests {
         let output = glue.lock().unwrap().execute(sql).unwrap();
 
         match output {
-            Payload::ShowVariable(PayloadVariable::Tables(names)) => {
-                assert_eq!(1, names.len());
-                assert_eq!("notifications", names[0]);
+            Payload::ShowVariable(PayloadVariable::Tables(mut names)) => {
+                names.sort();
+
+                assert_eq!(2, names.len());
+                assert_eq!("archived_notifications", names[0]);
+                assert_eq!("notifications", names[1]);
             }
             _ => {
                 panic!("no such case");
@@ -294,6 +354,24 @@ mod tests {
         delete_all_notification(glue.clone()).await;
         let result = list_notification(glue.clone()).await;
         assert!(result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_archive_notification() {
+        let glue = Arc::new(Mutex::new(get_memory_glue()));
+        initialize(glue.clone()).await;
+
+        let now = Utc::now();
+        let notification = Notification::new(0, 25, 5, now);
+        create_notification(glue.clone(), &notification).await;
+
+        archive_notification(glue.clone(), 0).await;
+
+        let result = list_notification(glue.clone()).await;
+        assert!(result.len() == 1);
+
+        let result = list_archived_notification(glue.clone()).await;
+        assert!(result.len() == 1);
     }
 
     #[tokio::test]

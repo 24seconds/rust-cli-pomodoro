@@ -435,7 +435,4 @@ mod tests {
             headers
         );
     }
-
-    #[tokio::test]
-    async fn test_send_slack() {}
 }

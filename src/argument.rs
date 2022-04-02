@@ -14,6 +14,7 @@ pub const DEFAULT_BREAK_TIME: u16 = 5;
 pub const TEST: &str = "test";
 pub const EXIT: &str = "exit";
 pub const CLEAR: &str = "clear";
+pub const HISTORY: &str = "history";
 
 pub fn get_config_app() -> App<'static, 'static> {
     App::new("pomodoro").arg(
@@ -63,6 +64,7 @@ pub fn get_app() -> App<'static, 'static> {
                 ),
             SubCommand::with_name(LIST).about("list notifications long command"),
             SubCommand::with_name(LS).about("list notifications short command"),
+            SubCommand::with_name(HISTORY).about("show archived notifications"),
             SubCommand::with_name(TEST).about("test notification"),
             SubCommand::with_name(CLEAR).about("clear terminal"),
             SubCommand::with_name(EXIT).about("exit pomodoro app"),
