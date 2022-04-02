@@ -22,7 +22,7 @@ mod configuration;
 mod input_handler;
 mod logging;
 
-use crate::argument::{parse_arg, CLEAR, CREATE, DELETE, EXIT, LIST, LS, Q, QUEUE, TEST};
+use crate::argument::{parse_arg, CLEAR, CREATE, DELETE, EXIT, HISTORY, LIST, LS, Q, QUEUE, TEST};
 use crate::configuration::{initialize_configuration, Configuration};
 use crate::notification::{notify_break, notify_work, Notification};
 
@@ -123,7 +123,7 @@ async fn analyze_input(
                 for (_, handle) in hash_map.iter() {
                     handle.abort();
                 }
-                db::delete_all_notification(glue.clone()).await;
+                db::delete_and_archive_all_notification(glue.clone()).await;
                 println!("All Notifications deleted");
                 debug!("Message::DeleteAll done");
             }

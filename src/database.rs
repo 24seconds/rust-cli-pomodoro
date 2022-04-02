@@ -226,6 +226,20 @@ pub async fn archive_notification(glue: ArcGlue, id: u16) {
     debug!("output: {:?}", output);
 }
 
+pub async fn archive_all_notification(glue: ArcGlue) {
+    let mut glue = glue.lock().unwrap();
+
+    let sql = r#"
+    INSERT INTO archived_notifications
+    SELECT * FROM notifications;
+    "#;
+
+    debug!("archive all sql: {}", sql);
+
+    let output = glue.execute(sql).unwrap();
+    debug!("output: {:?}", output);
+}
+
 pub async fn delete_all_notification(glue: ArcGlue) {
     let mut glue = glue.lock().unwrap();
 
@@ -239,6 +253,11 @@ pub async fn delete_all_notification(glue: ArcGlue) {
     debug!("output: {:?}", output);
 }
 
+pub async fn delete_and_archive_all_notification(glue: ArcGlue) {
+    archive_all_notification(glue.clone()).await;
+    delete_all_notification(glue.clone()).await;
+}
+
 #[cfg(test)]
 mod tests {
     use crate::notification::Notification;
@@ -246,9 +265,10 @@ mod tests {
     use gluesql::prelude::{Payload, PayloadVariable};
 
     use super::{
-        archive_notification, create_notification, delete_all_notification, delete_notification,
-        get_memory_glue, initialize, list_archived_notification, list_notification,
-        read_last_expired_notification, read_notification,
+        archive_all_notification, archive_notification, create_notification,
+        delete_all_notification, delete_notification, get_memory_glue, initialize,
+        list_archived_notification, list_notification, read_last_expired_notification,
+        read_notification,
     };
     use std::{
         panic,
@@ -358,6 +378,27 @@ mod tests {
 
     #[tokio::test]
     async fn test_archive_notification() {
+        let glue = Arc::new(Mutex::new(get_memory_glue()));
+        initialize(glue.clone()).await;
+
+        let now = Utc::now();
+        let notification = Notification::new(0, 25, 5, now);
+        create_notification(glue.clone(), &notification).await;
+
+        let notification = Notification::new(1, 30, 10, now);
+        create_notification(glue.clone(), &notification).await;
+
+        archive_all_notification(glue.clone()).await;
+
+        let result = list_notification(glue.clone()).await;
+        assert!(result.len() == 2);
+
+        let result = list_archived_notification(glue.clone()).await;
+        assert!(result.len() == 2);
+    }
+
+    #[tokio::test]
+    async fn test_archive_all_notification() {
         let glue = Arc::new(Mutex::new(get_memory_glue()));
         initialize(glue.clone()).await;
 
