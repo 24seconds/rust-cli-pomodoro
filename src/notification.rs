@@ -220,14 +220,25 @@ impl Tabled for Notification {
     }
 }
 
-// TODO(young): Handle the case if terminal notifier is not installed
 #[cfg(target_os = "macos")]
 fn notify_terminal_notifier(message: &'static str) {
-    Command::new("terminal-notifier")
+    use std::io::ErrorKind;
+
+    let result = Command::new("terminal-notifier")
         .arg("-message")
         .arg(message)
-        .output()
-        .expect("failed to execute process");
+        .output();
+    
+    match result {
+        Ok(_) => debug!("terminal notifier called"),
+        Err(e) => {
+            if e.kind() == ErrorKind::NotFound {
+                debug!("terminla notifier not found");
+            } else {
+                debug!("error while executing terminal notifier: {:?}", e);
+            }
+        }
+    }
 }
 
 async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>) {
