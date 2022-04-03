@@ -173,7 +173,7 @@ mod tests {
 
         let result = initialize_configuration(file);
         assert_eq!(true, result.is_ok());
-        let config = result.0.unwrap();
+        let config = result.unwrap().0;
 
         let slack_token = config.get_slack_token();
         assert_eq!(true, slack_token.is_some());
@@ -195,7 +195,7 @@ mod tests {
             .for_each(|file| {
                 let result = initialize_configuration(file);
                 assert_eq!(true, result.is_ok());
-                let config = result.0.unwrap();
+                let config = result.unwrap().0;
 
                 let slack_token = config.get_slack_token();
                 assert_eq!(true, slack_token.is_none());
