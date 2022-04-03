@@ -241,6 +241,8 @@ fn notify_terminal_notifier(message: &'static str) {
     }
 }
 
+/// notify_slack send notification to slack
+/// it uses slack notification if configuration specified
 async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>) {
     let token = configuration.get_slack_token();
     let channel = configuration.get_slack_channel();
@@ -271,6 +273,8 @@ async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>)
     debug!("resp: {:?}", resp);
 }
 
+/// notify_discord send notification to discord
+/// use discord webhook notification if configuration specified
 async fn notify_discord(message: &'static str, configuration: &Arc<Configuration>) {
     let webhook_url = match configuration.get_discord_webhook_url() {
         Some(url) => url,
@@ -293,7 +297,9 @@ async fn notify_discord(message: &'static str, configuration: &Arc<Configuration
     debug!("resp: {:?}", resp);
 }
 
-pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error> {
+/// notify_dekstop send notification to desktop.
+/// use notify-rust library for desktop notification
+async fn notify_desktop() -> Result<(), Error> {
     let mut notification = NR_Notification::new();
     let notification = notification
         .summary("Work time done!")
@@ -306,17 +312,20 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error
         .hint(Hint::Category("im.received".to_owned()))
         .sound_name("message-new-instant");
 
-    notification.show()?;
+    notification.show().map(|_| ())
+}
 
+pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error> {
+    // TODO(young): Handle this also as async later
     #[cfg(target_os = "macos")]
     notify_terminal_notifier("work done. Take a rest!");
 
-    // use slack notification if configuration specified
+    let desktop_fut = notify_desktop();
     let slack_fut = notify_slack("work done. Take a rest!", configuration);
     // use discord webhook notification if configuration specified
     let discord_fut = notify_discord("work done. Take a rest!", configuration);
 
-    join!(slack_fut, discord_fut);
+    join!(desktop_fut, slack_fut, discord_fut);
 
     Ok(())
 }
