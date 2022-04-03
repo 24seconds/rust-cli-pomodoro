@@ -22,10 +22,12 @@ mod configuration;
 mod error;
 mod input_handler;
 mod logging;
+mod notify;
 
 use crate::argument::{parse_arg, CLEAR, CREATE, DELETE, EXIT, HISTORY, LIST, LS, Q, QUEUE, TEST};
 use crate::configuration::{initialize_configuration, Configuration};
-use crate::notification::{notify_break, notify_work, Notification};
+use crate::notification::Notification;
+use crate::notify::{notify_break, notify_work};
 
 #[macro_use]
 extern crate log;
