@@ -17,7 +17,7 @@ pub const CLEAR: &str = "clear";
 pub const HISTORY: &str = "history";
 
 pub fn get_config_app() -> App<'static, 'static> {
-    App::new("pomodoro").arg(
+    App::new("pomodoro").version(env!("CARGO_PKG_VERSION")).arg(
         Arg::with_name("config")
             .help("read credential json file from this path")
             .takes_value(true)
@@ -29,7 +29,7 @@ pub fn get_config_app() -> App<'static, 'static> {
 pub fn get_app() -> App<'static, 'static> {
     App::new("pomodoro")
         .setting(AppSettings::NoBinaryName)
-        .version("1.0.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .version_short("v")
         .author("Young")
         .about("manage your time!")
