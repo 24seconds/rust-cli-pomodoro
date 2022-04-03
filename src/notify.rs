@@ -95,7 +95,7 @@ async fn notify_discord(message: &'static str, configuration: &Arc<Configuration
     resp.map(|_| ()).map_err(NotificationError::Discord)
 }
 
-/// notify_dekstop send notification to desktop.
+/// notify_desktop send notification to desktop.
 /// use notify-rust library for desktop notification
 async fn notify_desktop(summary_message: &'static str, body_message: &'static str) -> NotifyResult {
     let mut notification = NR_Notification::new();
