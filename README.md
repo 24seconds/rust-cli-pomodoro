@@ -120,3 +120,4 @@ pomodoro --config ./credential.json
 ## Compatibility
 
 It depends on [notify-rust](https://github.com/hoodie/notify-rust) support, so Linux, Mac (<= 11.0.0) and Windows (10, 8.1).
+- note: If you use this app by installing `cargo install` command, then macOs desktop notification seems to work well (Sun 03 Apr 2022)
