@@ -19,12 +19,15 @@ mod database;
 mod notification;
 use database as db;
 mod configuration;
+mod error;
 mod input_handler;
 mod logging;
+mod notify;
 
 use crate::argument::{parse_arg, CLEAR, CREATE, DELETE, EXIT, HISTORY, LIST, LS, Q, QUEUE, TEST};
 use crate::configuration::{initialize_configuration, Configuration};
-use crate::notification::{notify_break, notify_work, Notification};
+use crate::notification::Notification;
+use crate::notify::{notify_break, notify_work};
 
 #[macro_use]
 extern crate log;
@@ -180,7 +183,8 @@ async fn handle_history(glue: &Arc<Mutex<Glue<Key, MemoryStorage>>>) {
 
 async fn handle_test(configuration: &Arc<Configuration>) -> Result<(), Box<dyn Error>> {
     debug!("Message:NotificationTest called!");
-    notify_work(&configuration.clone()).await?;
+    let report = notify_work(&configuration.clone()).await?;
+    info!("\n{}", report);
     debug!("Message:NotificationTest done");
     println!("Notification Test called");
 
@@ -307,7 +311,13 @@ fn spawn_notification(
             sleep(wt).await;
             debug!("id ({}), work time ({}) done", id, work_time);
 
-            let _ = notify_work(&configuration).await;
+            // TODO(young): handle notify report err
+            let result = notify_work(&configuration).await;
+            if let Ok(report) = result {
+                info!("\n{}", report);
+                println!("Notification report generated");
+                input_handler::write_output(&mut io::stdout());
+            }
         }
 
         if break_time > 0 {
@@ -315,7 +325,13 @@ fn spawn_notification(
             sleep(bt).await;
             debug!("id ({}), break time ({}) done", id, break_time);
 
-            let _ = notify_break(&configuration).await;
+            // TODO(young): handle notify report err
+            let result = notify_break(&configuration).await;
+            if let Ok(report) = result {
+                info!("\n{}", report);
+                println!("Notification report generated");
+                input_handler::write_output(&mut io::stdout());
+            }
         }
 
         let result = delete_notification(id, hash_map, glue.clone()).await;
