@@ -1,6 +1,6 @@
-use notify_rust::{Notification as NR_Notification, Timeout as NR_Timeout};
 #[cfg(target_os = "linux")]
 use notify_rust::Hint;
+use notify_rust::{Notification as NR_Notification, Timeout as NR_Timeout};
 use serde_json::json;
 use std::result;
 use tokio::join;
@@ -11,6 +11,8 @@ use std::sync::Arc;
 
 use crate::configuration::{Configuration, SLACK_API_URL};
 use crate::error::NotificationError;
+
+type NotifyResult = result::Result<(), NotificationError>;
 
 #[cfg(target_os = "macos")]
 fn notify_terminal_notifier(message: &'static str) {
@@ -35,10 +37,7 @@ fn notify_terminal_notifier(message: &'static str) {
 
 /// notify_slack send notification to slack
 /// it uses slack notification if configuration specified
-async fn notify_slack(
-    message: &'static str,
-    configuration: &Arc<Configuration>,
-) -> result::Result<(), NotificationError> {
+async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>) -> NotifyResult {
     let token = configuration.get_slack_token();
     let channel = configuration.get_slack_channel();
 
@@ -72,10 +71,7 @@ async fn notify_slack(
 
 /// notify_discord send notification to discord
 /// use discord webhook notification if configuration specified
-async fn notify_discord(
-    message: &'static str,
-    configuration: &Arc<Configuration>,
-) -> result::Result<(), NotificationError> {
+async fn notify_discord(message: &'static str, configuration: &Arc<Configuration>) -> NotifyResult {
     let webhook_url = match configuration.get_discord_webhook_url() {
         Some(url) => url,
         None => {
@@ -101,10 +97,7 @@ async fn notify_discord(
 
 /// notify_dekstop send notification to desktop.
 /// use notify-rust library for desktop notification
-async fn notify_desktop(
-    summary_message: &'static str,
-    body_message: &'static str,
-) -> result::Result<(), NotificationError> {
+async fn notify_desktop(summary_message: &'static str, body_message: &'static str) -> NotifyResult {
     let mut notification = NR_Notification::new();
     let notification = notification
         .summary(summary_message)
@@ -123,7 +116,7 @@ async fn notify_desktop(
         .map_err(|e| NotificationError::Desktop(e))
 }
 
-pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), NotificationError> {
+pub async fn notify_work(configuration: &Arc<Configuration>) -> NotifyResult {
     // TODO(young): Handle this also as async later
     #[cfg(target_os = "macos")]
     notify_terminal_notifier("work done. Take a rest!");
@@ -138,7 +131,7 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Notif
     Ok(())
 }
 
-pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<(), NotificationError> {
+pub async fn notify_break(configuration: &Arc<Configuration>) -> NotifyResult {
     #[cfg(target_os = "macos")]
     notify_terminal_notifier("break done. Get back to work");
 
