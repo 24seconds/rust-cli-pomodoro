@@ -21,6 +21,14 @@ where
     command
 }
 
+pub fn write_output<W>(stdout: &mut W)
+where
+    W: Write,
+{
+    write!(stdout, "> ").unwrap();
+    stdout.flush().expect("couldn't flush stdout");
+}
+
 pub fn get_new_notification(
     matches: &ArgMatches<'_>,
     id_manager: &mut u16,

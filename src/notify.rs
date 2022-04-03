@@ -2,7 +2,9 @@
 use notify_rust::Hint;
 use notify_rust::{Notification as NR_Notification, Timeout as NR_Timeout};
 use serde_json::json;
+use std::error::Error;
 use std::result;
+use tabled::{Style, Table, Tabled};
 use tokio::join;
 
 #[cfg(target_os = "macos")]
@@ -66,7 +68,7 @@ async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>)
 
     debug!("resp: {:?}", resp);
 
-    resp.map(|_| ()).map_err(|e| NotificationError::Slack(e))
+    resp.map(|_| ()).map_err(NotificationError::Slack)
 }
 
 /// notify_discord send notification to discord
@@ -92,7 +94,7 @@ async fn notify_discord(message: &'static str, configuration: &Arc<Configuration
 
     debug!("resp: {:?}", resp);
 
-    resp.map(|_| ()).map_err(|e| NotificationError::Discord(e))
+    resp.map(|_| ()).map_err(NotificationError::Discord)
 }
 
 /// notify_dekstop send notification to desktop.
@@ -113,10 +115,10 @@ async fn notify_desktop(summary_message: &'static str, body_message: &'static st
     notification
         .show()
         .map(|_| ())
-        .map_err(|e| NotificationError::Desktop(e))
+        .map_err(NotificationError::Desktop)
 }
 
-pub async fn notify_work(configuration: &Arc<Configuration>) -> NotifyResult {
+pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<String, NotificationError> {
     // TODO(young): Handle this also as async later
     #[cfg(target_os = "macos")]
     notify_terminal_notifier("work done. Take a rest!");
@@ -125,13 +127,12 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> NotifyResult {
     let slack_fut = notify_slack("work done. Take a rest!", configuration);
     let discord_fut = notify_discord("work done. Take a rest!", configuration);
 
-    // ??? check how tokio join works later
     let (desktop_result, slack_result, discord_result) = join!(desktop_fut, slack_fut, discord_fut);
 
-    Ok(())
+    Ok(generate_notify_report(desktop_result, slack_result, discord_result))
 }
 
-pub async fn notify_break(configuration: &Arc<Configuration>) -> NotifyResult {
+pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<String, NotificationError> {
     #[cfg(target_os = "macos")]
     notify_terminal_notifier("break done. Get back to work");
 
@@ -142,8 +143,60 @@ pub async fn notify_break(configuration: &Arc<Configuration>) -> NotifyResult {
     let slack_fut = notify_slack("break done. Get back to work", configuration);
     let discord_fut = notify_discord("break done. Get back to work", configuration);
 
-    // ??? check how tokio join works later
     let (desktop_result, slack_result, discord_result) = join!(desktop_fut, slack_fut, discord_fut);
 
-    Ok(())
+    Ok(generate_notify_report(desktop_result, slack_result, discord_result))
+}
+
+#[derive(Tabled)]
+struct Report {
+    ok: String,
+    notification_type: String,
+    reason: String,
+}
+
+impl Report {
+    pub fn new(ok: String, notification_type: String) -> Self {
+        Report {
+            ok,
+            notification_type,
+            reason: "".to_string(),
+        }
+    }
+
+    pub fn update_reason(mut self, e: NotificationError) -> Self {
+        let mut vec = vec![format!("{}", e)];
+        if let Some(s) = e.source() {
+            vec.push(s.to_string());
+        }
+
+        self.reason = vec.join("\n");
+
+        self
+    }
+}
+
+fn generate_notify_report(
+    desktop: NotifyResult,
+    slack: NotifyResult,
+    discord: NotifyResult,
+) -> String {
+    let desktop_message = match desktop {
+        Ok(_) => Report::new(String::from("O"), String::from("Desktop")),
+        Err(e) => Report::new(String::from("X"), String::from("Desktop")).update_reason(e),
+    };
+
+    let slack_message = match slack {
+        Ok(_) => Report::new(String::from("O"), String::from("Slack")),
+        Err(e) => Report::new(String::from("X"), String::from("Slack")).update_reason(e),
+    };
+
+    let discord_message = match discord {
+        Ok(_) => Report::new(String::from("O"), String::from("Discord")),
+        Err(e) => Report::new(String::from("X"), String::from("Discord")).update_reason(e),
+    };
+
+    Table::new(vec![desktop_message, slack_message, discord_message])
+        .with(Style::modern().horizontal_off())
+        .to_string()
 }

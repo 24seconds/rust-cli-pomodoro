@@ -183,7 +183,8 @@ async fn handle_history(glue: &Arc<Mutex<Glue<Key, MemoryStorage>>>) {
 
 async fn handle_test(configuration: &Arc<Configuration>) -> Result<(), Box<dyn Error>> {
     debug!("Message:NotificationTest called!");
-    notify_work(&configuration.clone()).await?;
+    let report = notify_work(&configuration.clone()).await?;
+    info!("\n{}", report);
     debug!("Message:NotificationTest done");
     println!("Notification Test called");
 
@@ -310,7 +311,13 @@ fn spawn_notification(
             sleep(wt).await;
             debug!("id ({}), work time ({}) done", id, work_time);
 
-            let _ = notify_work(&configuration).await;
+            // TODO(young): handle notify report err
+            let result = notify_work(&configuration).await;
+            if let Ok(report) = result {
+                info!("\n{}", report);
+                println!("Notification report generated");
+                input_handler::write_output(&mut io::stdout());
+            }
         }
 
         if break_time > 0 {
@@ -318,7 +325,13 @@ fn spawn_notification(
             sleep(bt).await;
             debug!("id ({}), break time ({}) done", id, break_time);
 
-            let _ = notify_break(&configuration).await;
+            // TODO(young): handle notify report err
+            let result = notify_break(&configuration).await;
+            if let Ok(report) = result {
+                info!("\n{}", report);
+                println!("Notification report generated");
+                input_handler::write_output(&mut io::stdout());
+            }
         }
 
         let result = delete_notification(id, hash_map, glue.clone()).await;
