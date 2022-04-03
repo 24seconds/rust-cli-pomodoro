@@ -116,6 +116,7 @@ pomodoro --config ./credential.json
     - [v] cargo install
 - [ ] More rich notification: sound, app icon, hint, action etc
 - [o] Write test cases 
+- [ ] Support executing pomodoro commands in any terminal tabs [#27](https://github.com/24seconds/rust-cli-pomodoro/issues/27)
 
 ## Compatibility
 
