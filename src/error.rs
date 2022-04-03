@@ -15,11 +15,11 @@ pub enum NotificationError {
 impl fmt::Display for NotificationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            NotificationError::Desktop(_) => write!(f, "erorr while sending desktop notification"),
-            NotificationError::Slack(_) => write!(f, "error while sending slack notification"),
-            NotificationError::Discord(_) => write!(f, "error while sending slack notification"),
+            NotificationError::Desktop(_) => write!(f, "NotificationError::Desktop"),
+            NotificationError::Slack(_) => write!(f, "NotificationError::Slack"),
+            NotificationError::Discord(_) => write!(f, "NotificationError::Discord"),
             NotificationError::EmptyConfiguration => {
-                write!(f, "error while sending slack notification")
+                write!(f, "configuration is empty")
             }
         }
     }
