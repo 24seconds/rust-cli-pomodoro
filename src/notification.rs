@@ -1,7 +1,11 @@
 use chrono::{prelude::*, Duration};
 use gluesql::core::data::Value;
-use notify_rust::{error::Error, Hint, Notification as NR_Notification, Timeout as NR_Timeout};
+use notify_rust::{
+    error::Error as NotifyRustError, Hint, Notification as NR_Notification, Timeout as NR_Timeout,
+};
+use reqwest::Error as RequestError;
 use serde_json::json;
+use std::{fmt, result};
 use tokio::join;
 
 #[cfg(target_os = "macos")]
@@ -10,6 +14,40 @@ use std::sync::Arc;
 use tabled::Tabled;
 
 use crate::configuration::{Configuration, SLACK_API_URL};
+
+// notification error enum
+#[derive(Debug)]
+pub enum NotificationError {
+    // TODO(Desktop also need NotifyRustError type???)
+    Desktop(NotifyRustError),
+    Slack(RequestError),
+    Discord(RequestError),
+    EmptyConfiguration,
+}
+
+impl fmt::Display for NotificationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            NotificationError::Desktop(_) => write!(f, "erorr while sending desktop notification"),
+            NotificationError::Slack(_) => write!(f, "error while sending slack notification"),
+            NotificationError::Discord(_) => write!(f, "error while sending slack notification"),
+            NotificationError::EmptyConfiguration => {
+                write!(f, "error while sending slack notification")
+            }
+        }
+    }
+}
+
+impl std::error::Error for NotificationError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            NotificationError::Desktop(ref e) => Some(e),
+            NotificationError::Slack(ref e) => Some(e),
+            NotificationError::Discord(ref e) => Some(e),
+            NotificationError::EmptyConfiguration => None,
+        }
+    }
+}
 
 /// The notification schema used to store to database
 #[derive(Debug)]
@@ -243,13 +281,16 @@ fn notify_terminal_notifier(message: &'static str) {
 
 /// notify_slack send notification to slack
 /// it uses slack notification if configuration specified
-async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>) {
+async fn notify_slack(
+    message: &'static str,
+    configuration: &Arc<Configuration>,
+) -> result::Result<(), NotificationError> {
     let token = configuration.get_slack_token();
     let channel = configuration.get_slack_channel();
 
     if token.is_none() || channel.is_none() {
         debug!("token or channel is none");
-        return;
+        return Err(NotificationError::EmptyConfiguration);
     }
 
     let body = json!({
@@ -271,16 +312,21 @@ async fn notify_slack(message: &'static str, configuration: &Arc<Configuration>)
         .await;
 
     debug!("resp: {:?}", resp);
+
+    resp.map(|_| ()).map_err(|e| NotificationError::Slack(e))
 }
 
 /// notify_discord send notification to discord
 /// use discord webhook notification if configuration specified
-async fn notify_discord(message: &'static str, configuration: &Arc<Configuration>) {
+async fn notify_discord(
+    message: &'static str,
+    configuration: &Arc<Configuration>,
+) -> result::Result<(), NotificationError> {
     let webhook_url = match configuration.get_discord_webhook_url() {
         Some(url) => url,
         None => {
             debug!("webhook_url is none");
-            return;
+            return Err(NotificationError::EmptyConfiguration);
         }
     };
 
@@ -295,15 +341,20 @@ async fn notify_discord(message: &'static str, configuration: &Arc<Configuration
         .await;
 
     debug!("resp: {:?}", resp);
+
+    resp.map(|_| ()).map_err(|e| NotificationError::Discord(e))
 }
 
 /// notify_dekstop send notification to desktop.
 /// use notify-rust library for desktop notification
-async fn notify_desktop() -> Result<(), Error> {
+async fn notify_desktop(
+    summary_message: &'static str,
+    body_message: &'static str,
+) -> result::Result<(), NotificationError> {
     let mut notification = NR_Notification::new();
     let notification = notification
-        .summary("Work time done!")
-        .body("Work time finished.\nNow take a rest!")
+        .summary(summary_message)
+        .body(body_message)
         .appname("pomodoro")
         .timeout(NR_Timeout::Milliseconds(5000));
 
@@ -312,48 +363,40 @@ async fn notify_desktop() -> Result<(), Error> {
         .hint(Hint::Category("im.received".to_owned()))
         .sound_name("message-new-instant");
 
-    notification.show().map(|_| ())
+    notification
+        .show()
+        .map(|_| ())
+        .map_err(|e| NotificationError::Desktop(e))
 }
 
-pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), Error> {
+pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<(), NotificationError> {
     // TODO(young): Handle this also as async later
     #[cfg(target_os = "macos")]
     notify_terminal_notifier("work done. Take a rest!");
 
-    let desktop_fut = notify_desktop();
+    let desktop_fut = notify_desktop("Work time done!", "Work time finished.\nNow take a rest!");
     let slack_fut = notify_slack("work done. Take a rest!", configuration);
-    // use discord webhook notification if configuration specified
     let discord_fut = notify_discord("work done. Take a rest!", configuration);
 
-    join!(desktop_fut, slack_fut, discord_fut);
+    // ??? check how tokio join works later
+    let (desktop_result, slack_result, discord_result) = join!(desktop_fut, slack_fut, discord_fut);
 
     Ok(())
 }
 
-pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<(), Error> {
-    let mut notification = NR_Notification::new();
-    let notification = notification
-        .summary("Break time done!")
-        .body("Break time finished.\n Now back to work!")
-        .appname("pomodoro")
-        .timeout(NR_Timeout::Milliseconds(5000));
-
-    #[cfg(target_os = "linux")]
-    notification.hint(Hint::Category("im.received".to_owned()));
-
-    notification.show()?;
-
-    // use terminal-notifier for desktop notification
+pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<(), NotificationError> {
     #[cfg(target_os = "macos")]
     notify_terminal_notifier("break done. Get back to work");
 
-    // use slack notification if configuration specified
+    let desktop_fut = notify_desktop(
+        "Break time done!",
+        "Break time finished.\n Now back to work!",
+    );
     let slack_fut = notify_slack("break done. Get back to work", configuration);
-
-    // use discord webhook notification if configuration specified
     let discord_fut = notify_discord("break done. Get back to work", configuration);
 
-    join!(slack_fut, discord_fut);
+    // ??? check how tokio join works later
+    let (desktop_result, slack_result, discord_result) = join!(desktop_fut, slack_fut, discord_fut);
 
     Ok(())
 }
