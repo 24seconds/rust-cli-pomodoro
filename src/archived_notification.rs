@@ -41,7 +41,7 @@ impl ArchivedNotification {
 }
 
 impl Tabled for ArchivedNotification {
-    const LENGTH: usize = 5;
+    const LENGTH: usize = 7;
 
     fn fields(&self) -> Vec<String> {
         let id = self.id.to_string();
@@ -69,6 +69,8 @@ impl Tabled for ArchivedNotification {
 
         vec![
             id,
+            self.work_time.to_string(),
+            self.break_time.to_string(),
             started_at,
             work_expired_at,
             break_expired_at,
@@ -79,6 +81,8 @@ impl Tabled for ArchivedNotification {
     fn headers() -> Vec<String> {
         vec![
             "id",
+            "work_time",
+            "break_time",
             "started_at",
             "expired_at (work)",
             "expired_at (break)",
@@ -119,13 +123,15 @@ mod tests {
         let archived_notification = ArchivedNotification::from(notification);
 
         let fields = archived_notification.fields();
-        assert_eq!(5, fields.len());
+        assert_eq!(7, fields.len());
 
         let headers = ArchivedNotification::headers();
-        assert_eq!(5, headers.len());
+        assert_eq!(7, headers.len());
         assert_eq!(
             vec![
                 "id".to_string(),
+                "work_time".to_string(),
+                "break_time".to_string(),
                 "started_at".to_string(),
                 "expired_at (work)".to_string(),
                 "expired_at (break)".to_string(),

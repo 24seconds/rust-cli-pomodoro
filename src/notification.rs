@@ -228,7 +228,7 @@ fn notify_terminal_notifier(message: &'static str) {
         .arg("-message")
         .arg(message)
         .output();
-    
+
     match result {
         Ok(_) => debug!("terminal notifier called"),
         Err(e) => {
