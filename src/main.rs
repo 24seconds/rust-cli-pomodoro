@@ -19,6 +19,7 @@ mod database;
 mod notification;
 use database as db;
 mod configuration;
+mod error;
 mod input_handler;
 mod logging;
 

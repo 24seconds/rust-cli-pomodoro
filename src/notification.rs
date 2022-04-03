@@ -1,11 +1,8 @@
 use chrono::{prelude::*, Duration};
 use gluesql::core::data::Value;
-use notify_rust::{
-    error::Error as NotifyRustError, Hint, Notification as NR_Notification, Timeout as NR_Timeout,
-};
-use reqwest::Error as RequestError;
+use notify_rust::{Hint, Notification as NR_Notification, Timeout as NR_Timeout};
 use serde_json::json;
-use std::{fmt, result};
+use std::result;
 use tokio::join;
 
 #[cfg(target_os = "macos")]
@@ -14,40 +11,7 @@ use std::sync::Arc;
 use tabled::Tabled;
 
 use crate::configuration::{Configuration, SLACK_API_URL};
-
-// notification error enum
-#[derive(Debug)]
-pub enum NotificationError {
-    // TODO(Desktop also need NotifyRustError type???)
-    Desktop(NotifyRustError),
-    Slack(RequestError),
-    Discord(RequestError),
-    EmptyConfiguration,
-}
-
-impl fmt::Display for NotificationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            NotificationError::Desktop(_) => write!(f, "erorr while sending desktop notification"),
-            NotificationError::Slack(_) => write!(f, "error while sending slack notification"),
-            NotificationError::Discord(_) => write!(f, "error while sending slack notification"),
-            NotificationError::EmptyConfiguration => {
-                write!(f, "error while sending slack notification")
-            }
-        }
-    }
-}
-
-impl std::error::Error for NotificationError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            NotificationError::Desktop(ref e) => Some(e),
-            NotificationError::Slack(ref e) => Some(e),
-            NotificationError::Discord(ref e) => Some(e),
-            NotificationError::EmptyConfiguration => None,
-        }
-    }
-}
+use crate::error::NotificationError;
 
 /// The notification schema used to store to database
 #[derive(Debug)]
