@@ -1,9 +1,9 @@
+use colored::{ColoredString, Colorize};
 #[cfg(target_os = "linux")]
 use notify_rust::Hint;
 use notify_rust::{Notification as NR_Notification, Timeout as NR_Timeout};
 use serde_json::json;
 use std::error::Error;
-use std::result;
 use tabled::{Style, Table, Tabled};
 use tokio::join;
 
@@ -12,9 +12,7 @@ use std::process::Command;
 use std::sync::Arc;
 
 use crate::configuration::{Configuration, SLACK_API_URL};
-use crate::error::NotificationError;
-
-type NotifyResult = result::Result<(), NotificationError>;
+use crate::error::{NotificationError, NotifyResult};
 
 #[cfg(target_os = "macos")]
 fn notify_terminal_notifier(message: &'static str) {
@@ -129,7 +127,11 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<String, N
 
     let (desktop_result, slack_result, discord_result) = join!(desktop_fut, slack_fut, discord_fut);
 
-    Ok(generate_notify_report(desktop_result, slack_result, discord_result))
+    Ok(generate_notify_report(
+        desktop_result,
+        slack_result,
+        discord_result,
+    ))
 }
 
 pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<String, NotificationError> {
@@ -145,22 +147,26 @@ pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<String, 
 
     let (desktop_result, slack_result, discord_result) = join!(desktop_fut, slack_fut, discord_fut);
 
-    Ok(generate_notify_report(desktop_result, slack_result, discord_result))
+    Ok(generate_notify_report(
+        desktop_result,
+        slack_result,
+        discord_result,
+    ))
 }
 
 #[derive(Tabled)]
 struct Report {
-    ok: String,
+    ok: ColoredString,
     notification_type: String,
     reason: String,
 }
 
 impl Report {
-    pub fn new(ok: String, notification_type: String) -> Self {
+    pub fn new(ok: &'static str, notification_type: &'static str) -> Self {
         Report {
-            ok,
-            notification_type,
-            reason: "".to_string(),
+            ok: ok.green(),
+            notification_type: String::from(notification_type),
+            reason: String::default(),
         }
     }
 
@@ -182,21 +188,21 @@ fn generate_notify_report(
     discord: NotifyResult,
 ) -> String {
     let desktop_message = match desktop {
-        Ok(_) => Report::new(String::from("O"), String::from("Desktop")),
-        Err(e) => Report::new(String::from("X"), String::from("Desktop")).update_reason(e),
+        Ok(_) => Report::new("O", "Desktop"),
+        Err(e) => Report::new("X", "Desktop").update_reason(e),
     };
 
     let slack_message = match slack {
-        Ok(_) => Report::new(String::from("O"), String::from("Slack")),
-        Err(e) => Report::new(String::from("X"), String::from("Slack")).update_reason(e),
+        Ok(_) => Report::new("O", "Slack"),
+        Err(e) => Report::new("X", "Slack").update_reason(e),
     };
 
     let discord_message = match discord {
-        Ok(_) => Report::new(String::from("O"), String::from("Discord")),
-        Err(e) => Report::new(String::from("X"), String::from("Discord")).update_reason(e),
+        Ok(_) => Report::new("O", "Discord"),
+        Err(e) => Report::new("X", "Discord").update_reason(e),
     };
 
     Table::new(vec![desktop_message, slack_message, discord_message])
-        .with(Style::modern().horizontal_off())
+        .with(Style::modern())
         .to_string()
 }

@@ -25,7 +25,9 @@ mod logging;
 mod notify;
 
 use crate::argument::{parse_arg, CLEAR, CREATE, DELETE, EXIT, HISTORY, LIST, LS, Q, QUEUE, TEST};
-use crate::configuration::{initialize_configuration, Configuration};
+use crate::configuration::{
+    generate_configuration_report, initialize_configuration, Configuration,
+};
 use crate::notification::Notification;
 use crate::notify::{notify_break, notify_work};
 
@@ -39,14 +41,16 @@ pub type ArcGlue = Arc<Mutex<Glue<Key, MemoryStorage>>>;
 async fn main() -> Result<(), Box<dyn Error>> {
     logging::initialize_logging();
 
+    info!("info test, start pomodoro...");
+    debug!("debug test, start pomodoro...");
+
     let config_matches = argument::get_config_app().get_matches();
     let credential_file_path = config_matches.value_of("config");
 
-    let configuration = initialize_configuration(credential_file_path)?;
+    let (configuration, config_error) = initialize_configuration(credential_file_path)?;
+    let report = generate_configuration_report(&configuration, config_error);
+    info!("\nconfig flag result!\n{}", report);
     let configuration = Arc::new(configuration);
-
-    info!("info test, start pomodoro...");
-    debug!("debug test, start pomodoro...");
 
     let glue = Arc::new(Mutex::new(db::get_memory_glue()));
     db::initialize(glue.clone()).await;
