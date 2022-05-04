@@ -70,7 +70,7 @@ fn get_new_id(id_manager: &mut u16) -> u16 {
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
-    use clap_v3::Command;
+    use clap::Command;
 
     use crate::argument::add_args_for_create_subcommand;
 

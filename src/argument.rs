@@ -113,7 +113,7 @@ pub(crate) fn add_args_for_create_subcommand(command: Command<'_>) -> Command {
 
 #[cfg(test)]
 mod tests {
-    use clap_v3::{Arg, Command};
+    use clap::{Arg, Command};
 
     use super::{add_args_for_create_subcommand, get_command, get_config_command, parse_arg};
 
