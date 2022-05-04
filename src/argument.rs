@@ -4,7 +4,6 @@ use clap::{Arg, ArgMatches, Command};
 
 pub const CREATE: &str = "create";
 pub const QUEUE: &str = "queue";
-// TODO(young): I don't know how to make alias of QUEUE command so I added Q command for aliasing.
 pub const Q: &str = "q";
 pub const DELETE: &str = "delete";
 pub const LIST: &str = "list";
@@ -17,8 +16,7 @@ pub const CLEAR: &str = "clear";
 pub const HISTORY: &str = "history";
 
 pub fn get_config_command() -> Command<'static> {
-    // TODO(young): revisit crate_version macro
-    Command::new("pomodoro").version("crate_version!()").arg(
+    Command::new("pomodoro").version(env!("CARGO_PKG_VERSION")).arg(
         Arg::new("config")
             .help("read credential json file from this path")
             .takes_value(true)
