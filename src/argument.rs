@@ -1,6 +1,7 @@
 use std::{error::Error, str::FromStr};
 
-use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand};
+use clap_v3::{Arg as ArgV3, ArgMatches, Command};
 
 pub const CREATE: &str = "create";
 pub const QUEUE: &str = "queue";
@@ -24,6 +25,48 @@ pub fn get_config_app() -> App<'static, 'static> {
             .short("c")
             .long("config"),
     )
+}
+
+pub fn get_command() -> Command<'static> {
+    Command::new("pomodoro")
+        .no_binary_name(true)
+        .version(env!("CARGO_PKG_VERSION"))
+        .author("Young")
+        .about("manage your time!")
+        .subcommands(vec![
+            {
+                let cmd = Command::new(CREATE)
+                    .alias("c")
+                    .about("create the notification");
+                add_args_for_subcommand(cmd)
+            },
+            {
+                let cmd = Command::new(QUEUE)
+                    .alias(Q)
+                    .about("create the notification");
+                add_args_for_subcommand(cmd)
+            },
+            Command::new(DELETE)
+                .alias("d")
+                .about("delete a notification")
+                .arg(
+                    ArgV3::new("id")
+                        .help("The ID of notification to delete")
+                        .takes_value(true)
+                        .conflicts_with("all")
+                        .short('i'),
+                )
+                .arg(
+                    ArgV3::new("all")
+                        .help("The flag to delete all notifications")
+                        .short('a'),
+                ),
+            Command::new(LIST).alias(LS).about("list notifications"),
+            Command::new(HISTORY).about("show archived notifications"),
+            Command::new(TEST).about("test notification"),
+            Command::new(CLEAR).about("clear terminal"),
+            Command::new(EXIT).about("exit pomodoro app"),
+        ])
 }
 
 pub fn get_app() -> App<'static, 'static> {
@@ -84,6 +127,34 @@ where
         .map_err(|_| format!("failed to parse arg ({})", str))?;
 
     Ok(parsed)
+}
+
+pub(crate) fn add_args_for_subcommand<'a>(command: Command<'a>) -> Command<'a> {
+    let command = command
+        .arg(
+            ArgV3::new("work")
+                .help("The focus time. Unit is minutes")
+                .takes_value(true)
+                .short('w')
+                .default_value("0"),
+        )
+        .arg(
+            ArgV3::new("break")
+                .help("The break time, Unit is minutes")
+                .takes_value(true)
+                .short('b')
+                .default_value("0"),
+        )
+        .arg(
+            ArgV3::new("default")
+                .help("The flag to create default notification, 25 mins work and 5 min break")
+                .conflicts_with("work")
+                .conflicts_with("break")
+                .short('d')
+                .long("default"),
+        );
+
+    command
 }
 
 pub(crate) fn add_args_for_creation<'a>(app: App<'a, 'a>) -> App<'a, 'a> {

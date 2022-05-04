@@ -2,10 +2,11 @@ use crate::argument::{parse_arg, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
 use crate::Notification;
 use chrono::{DateTime, Utc};
 use clap::ArgMatches;
+use clap_v3;
 use std::error::Error;
 use std::io::{BufRead, Write};
 
-pub fn read_command<R, W>(stdout: &mut W, stdin: &mut R) -> String
+pub fn read_input<R, W>(stdout: &mut W, stdin: &mut R) -> String
 where
     R: BufRead,
     W: Write,
@@ -30,7 +31,7 @@ where
 }
 
 pub fn get_new_notification(
-    matches: &ArgMatches<'_>,
+    matches: &clap_v3::ArgMatches,
     id_manager: &mut u16,
     created_at: DateTime<Utc>,
 ) -> Result<Option<Notification>, Box<dyn Error>> {
@@ -74,14 +75,14 @@ mod tests {
 
     use crate::argument::add_args_for_creation;
 
-    use super::{get_new_notification, read_command};
+    use super::{get_new_notification, read_input};
 
     #[test]
     fn test_read_command() {
         let mut input = &b"list"[..];
         let mut output = Vec::new();
 
-        let command = read_command(&mut output, &mut input);
+        let command = read_input(&mut output, &mut input);
         assert_eq!("list", command);
     }
 

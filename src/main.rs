@@ -1,5 +1,5 @@
 use chrono::Utc;
-use clap::ArgMatches;
+use clap_v3::ArgMatches;
 use gluesql::{
     memory_storage::Key,
     prelude::{Glue, MemoryStorage},
@@ -60,11 +60,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     loop {
         debug!("inside spawn blocking");
-        let command = input_handler::read_command(&mut io::stdout(), &mut io::stdin().lock());
+        let user_input = input_handler::read_input(&mut io::stdout(), &mut io::stdin().lock());
 
-        debug!("user input: {}", &command);
-        if let Err(e) =
-            analyze_input(&command, &mut id_manager, &hash_map, &glue, &configuration).await
+        debug!("user input: {}", &user_input);
+        if let Err(e) = analyze_input(
+            &user_input,
+            &mut id_manager,
+            &hash_map,
+            &glue,
+            &configuration,
+        )
+        .await
         {
             println!("There was an error analyzing the input: {}", e);
         };
@@ -72,31 +78,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 async fn analyze_input(
-    command: &str,
+    user_input: &str,
     id_manager: &mut u16,
     hash_map: &Arc<Mutex<TaskMap>>,
     glue: &Arc<Mutex<Glue<Key, MemoryStorage>>>,
     configuration: &Arc<Configuration>,
 ) -> Result<(), Box<dyn Error>> {
-    let app = argument::get_app();
-    let input = command.split_whitespace();
+    let command = argument::get_command();
+    let input = user_input.split_whitespace();
     debug!("input: {:?}", input);
-    let matches = match app.get_matches_from_safe(input) {
+
+    let matches = match command.try_get_matches_from(input) {
         Ok(args) => args,
         Err(err) => {
-            match err.kind {
-                // HelpDisplayed has help message in error
-                clap::ErrorKind::HelpDisplayed => {
+            match err.kind() {
+                // DisplayHelp has help message in error
+                clap_v3::ErrorKind::DisplayHelp => {
                     print!("\n{}\n", err);
                     return Ok(());
                 }
                 // clap automatically print version string with out newline.
-                clap::ErrorKind::VersionDisplayed => {
+                clap_v3::ErrorKind::DisplayVersion => {
                     println!();
                     return Ok(());
                 }
                 _ => {
-                    print!("\n{}\n", err);
+                    print!("\n error while handling the input, {}\n", err);
                 }
             }
             return Err(Box::new(err));
@@ -104,13 +111,13 @@ async fn analyze_input(
     };
 
     match matches.subcommand() {
-        (CREATE, Some(sub_matches)) => {
+        Some((CREATE, sub_matches)) => {
             handle_create(sub_matches, configuration, hash_map, glue, id_manager).await?;
         }
-        (QUEUE, Some(sub_matches)) | (Q, Some(sub_matches)) => {
+        Some((QUEUE, sub_matches)) | Some((Q, sub_matches)) => {
             handle_queue(sub_matches, configuration, hash_map, glue, id_manager).await?;
         }
-        (DELETE, Some(sub_matches)) => {
+        Some((DELETE, sub_matches)) => {
             if sub_matches.is_present("id") {
                 // delete one
                 let id = parse_arg::<u16>(sub_matches, "id")?;
@@ -137,19 +144,19 @@ async fn analyze_input(
                 debug!("Message::DeleteAll done");
             }
         }
-        (LS, Some(_)) | (LIST, Some(_)) => {
+        Some((LS, _)) | Some((LIST, _)) => {
             handle_list(glue).await;
         }
-        (HISTORY, Some(_)) => {
+        Some((HISTORY, _)) => {
             handle_history(glue).await;
         }
-        (TEST, Some(_)) => {
+        Some((TEST, _)) => {
             handle_test(configuration).await?;
         }
-        (CLEAR, Some(_)) => {
+        Some((CLEAR, _)) => {
             print!("\x1B[2J\x1B[1;1H");
         }
-        (EXIT, Some(_)) => {
+        Some((EXIT, _)) => {
             process::exit(0);
         }
         _ => (),
@@ -196,7 +203,7 @@ async fn handle_test(configuration: &Arc<Configuration>) -> Result<(), Box<dyn E
 }
 
 async fn handle_create(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     configuration: &Arc<Configuration>,
     hash_map: &Arc<Mutex<TaskMap>>,
     glue: &ArcGlue,
@@ -224,7 +231,7 @@ async fn handle_create(
 }
 
 async fn handle_queue(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     configuration: &Arc<Configuration>,
     hash_map: &Arc<Mutex<TaskMap>>,
     glue: &ArcGlue,
