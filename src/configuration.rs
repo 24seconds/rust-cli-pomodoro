@@ -55,7 +55,7 @@ impl Configuration {
     }
 }
 
-pub fn initialize_configuration(
+pub fn load_configuration(
     credential_file: Option<&str>,
 ) -> Result<(Configuration, Option<ConfigurationError>), Box<dyn Error>> {
     let (configuration, error) = match credential_file {
@@ -164,14 +164,14 @@ pub fn generate_configuration_report(
 mod tests {
     use std::path::PathBuf;
 
-    use super::initialize_configuration;
+    use super::load_configuration;
 
     #[test]
     fn test_initialize_configuration_some() {
         let file = PathBuf::from("resources/test/mock_credential.json");
         let file = file.to_str();
 
-        let result = initialize_configuration(file);
+        let result = load_configuration(file);
         assert_eq!(true, result.is_ok());
         let config = result.unwrap().0;
 
@@ -193,7 +193,7 @@ mod tests {
         [PathBuf::from("wrong_path").to_str(), None]
             .into_iter()
             .for_each(|file| {
-                let result = initialize_configuration(file);
+                let result = load_configuration(file);
                 assert_eq!(true, result.is_ok());
                 let config = result.unwrap().0;
 

@@ -26,7 +26,7 @@ mod notify;
 
 use crate::argument::{parse_arg, CLEAR, CREATE, DELETE, EXIT, HISTORY, LIST, LS, Q, QUEUE, TEST};
 use crate::configuration::{
-    generate_configuration_report, initialize_configuration, Configuration,
+    generate_configuration_report, load_configuration, Configuration,
 };
 use crate::notification::Notification;
 use crate::notify::{notify_break, notify_work};
@@ -44,16 +44,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("info test, start pomodoro...");
     debug!("debug test, start pomodoro...");
 
-    let config_matches = argument::get_config_command().get_matches();
-    let credential_file_path = config_matches.value_of("config");
-
-    let (configuration, config_error) = initialize_configuration(credential_file_path)?;
-    let report = generate_configuration_report(&configuration, config_error);
-    info!("\nconfig flag result!\n{}", report);
-    let configuration = Arc::new(configuration);
-
-    let glue = Arc::new(Mutex::new(db::get_memory_glue()));
-    db::initialize(glue.clone()).await;
+    let configuration = initialize_configuration()?;
+    let glue = initialize_db().await;
 
     let mut id_manager: u16 = 1;
     let hash_map: Arc<Mutex<TaskMap>> = Arc::new(Mutex::new(HashMap::new()));
@@ -76,6 +68,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
         };
     }
 }
+
+fn initialize_configuration() -> Result<Arc<Configuration>, Box<dyn Error>> {
+    let config_matches = argument::get_config_command().get_matches();
+    let credential_file_path = config_matches.value_of("config");
+
+    let (configuration, config_error) = load_configuration(credential_file_path)?;
+    let report = generate_configuration_report(&configuration, config_error);
+    info!("\nconfig flag result!\n{}", report);
+    
+    Ok(Arc::new(configuration))
+}
+
+async fn initialize_db() -> Arc<Mutex<Glue<Key, MemoryStorage>>> {
+    let glue = Arc::new(Mutex::new(db::get_memory_glue()));
+    db::initialize(glue.clone()).await;
+
+    glue
+}
+
 
 async fn analyze_input(
     user_input: &str,
