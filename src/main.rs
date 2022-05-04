@@ -1,5 +1,5 @@
 use chrono::Utc;
-use clap_v3::ArgMatches;
+use clap::{ArgMatches, ErrorKind};
 use gluesql::{
     memory_storage::Key,
     prelude::{Glue, MemoryStorage},
@@ -93,12 +93,12 @@ async fn analyze_input(
         Err(err) => {
             match err.kind() {
                 // DisplayHelp has help message in error
-                clap_v3::ErrorKind::DisplayHelp => {
+                ErrorKind::DisplayHelp => {
                     print!("\n{}\n", err);
                     return Ok(());
                 }
                 // clap automatically print version string with out newline.
-                clap_v3::ErrorKind::DisplayVersion => {
+                ErrorKind::DisplayVersion => {
                     println!();
                     return Ok(());
                 }

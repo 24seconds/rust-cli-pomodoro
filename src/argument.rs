@@ -1,6 +1,6 @@
 use std::{error::Error, str::FromStr};
 
-use clap_v3::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgMatches, Command};
 
 pub const CREATE: &str = "create";
 pub const QUEUE: &str = "queue";

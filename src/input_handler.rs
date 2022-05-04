@@ -1,7 +1,7 @@
 use crate::argument::{parse_arg, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
 use crate::Notification;
 use chrono::{DateTime, Utc};
-use clap_v3::ArgMatches;
+use clap::ArgMatches;
 use std::error::Error;
 use std::io::{BufRead, Write};
 
