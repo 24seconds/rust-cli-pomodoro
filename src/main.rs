@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("info test, start pomodoro...");
     debug!("debug test, start pomodoro...");
 
-    let config_matches = argument::get_config_app().get_matches();
+    let config_matches = argument::get_config_command().get_matches();
     let credential_file_path = config_matches.value_of("config");
 
     let (configuration, config_error) = initialize_configuration(credential_file_path)?;

@@ -1,7 +1,6 @@
 use std::{error::Error, str::FromStr};
 
-use clap::{App, AppSettings, Arg, SubCommand};
-use clap_v3::{Arg as ArgV3, ArgMatches, Command};
+use clap_v3::{Arg, ArgMatches, Command};
 
 pub const CREATE: &str = "create";
 pub const QUEUE: &str = "queue";
@@ -17,13 +16,13 @@ pub const EXIT: &str = "exit";
 pub const CLEAR: &str = "clear";
 pub const HISTORY: &str = "history";
 
-pub fn get_config_app() -> App<'static, 'static> {
-    App::new("pomodoro").version(env!("CARGO_PKG_VERSION")).arg(
-        Arg::with_name("config")
+pub fn get_config_command() -> Command<'static> {
+    // TODO(young): revisit crate_version macro
+    Command::new("pomodoro").version("crate_version!()").arg(
+        Arg::new("config")
             .help("read credential json file from this path")
             .takes_value(true)
-            .short("c")
-            .long("config"),
+            .short('c'),
     )
 }
 
@@ -38,26 +37,26 @@ pub fn get_command() -> Command<'static> {
                 let cmd = Command::new(CREATE)
                     .alias("c")
                     .about("create the notification");
-                add_args_for_subcommand(cmd)
+                add_args_for_create_subcommand(cmd)
             },
             {
                 let cmd = Command::new(QUEUE)
                     .alias(Q)
                     .about("create the notification");
-                add_args_for_subcommand(cmd)
+                add_args_for_create_subcommand(cmd)
             },
             Command::new(DELETE)
                 .alias("d")
                 .about("delete a notification")
                 .arg(
-                    ArgV3::new("id")
+                    Arg::new("id")
                         .help("The ID of notification to delete")
                         .takes_value(true)
                         .conflicts_with("all")
                         .short('i'),
                 )
                 .arg(
-                    ArgV3::new("all")
+                    Arg::new("all")
                         .help("The flag to delete all notifications")
                         .short('a'),
                 ),
@@ -66,51 +65,6 @@ pub fn get_command() -> Command<'static> {
             Command::new(TEST).about("test notification"),
             Command::new(CLEAR).about("clear terminal"),
             Command::new(EXIT).about("exit pomodoro app"),
-        ])
-}
-
-pub fn get_app() -> App<'static, 'static> {
-    App::new("pomodoro")
-        .setting(AppSettings::NoBinaryName)
-        .version(env!("CARGO_PKG_VERSION"))
-        .version_short("v")
-        .author("Young")
-        .about("manage your time!")
-        .subcommands(vec![
-            {
-                let cmd = SubCommand::with_name(CREATE);
-                add_args_for_creation(cmd).about("create the notification")
-            },
-            {
-                let cmd = SubCommand::with_name(QUEUE).about("queue the notification");
-                add_args_for_creation(cmd)
-            },
-            {
-                let cmd = SubCommand::with_name(Q).about("queue the notification");
-                add_args_for_creation(cmd)
-            },
-            SubCommand::with_name(DELETE)
-                .about("delete a notification")
-                .arg(
-                    Arg::with_name("id")
-                        .help("The ID of notification to delete")
-                        .takes_value(true)
-                        .conflicts_with("all")
-                        .short("i")
-                        .long("id"),
-                )
-                .arg(
-                    Arg::with_name("all")
-                        .help("The flag to delete all notifications")
-                        .short("a")
-                        .long("all"),
-                ),
-            SubCommand::with_name(LIST).about("list notifications long command"),
-            SubCommand::with_name(LS).about("list notifications short command"),
-            SubCommand::with_name(HISTORY).about("show archived notifications"),
-            SubCommand::with_name(TEST).about("test notification"),
-            SubCommand::with_name(CLEAR).about("clear terminal"),
-            SubCommand::with_name(EXIT).about("exit pomodoro app"),
         ])
 }
 
@@ -129,24 +83,24 @@ where
     Ok(parsed)
 }
 
-pub(crate) fn add_args_for_subcommand<'a>(command: Command<'a>) -> Command<'a> {
+pub(crate) fn add_args_for_create_subcommand(command: Command<'_>) -> Command {
     let command = command
         .arg(
-            ArgV3::new("work")
+            Arg::new("work")
                 .help("The focus time. Unit is minutes")
                 .takes_value(true)
                 .short('w')
                 .default_value("0"),
         )
         .arg(
-            ArgV3::new("break")
+            Arg::new("break")
                 .help("The break time, Unit is minutes")
                 .takes_value(true)
                 .short('b')
                 .default_value("0"),
         )
         .arg(
-            ArgV3::new("default")
+            Arg::new("default")
                 .help("The flag to create default notification, 25 mins work and 5 min break")
                 .conflicts_with("work")
                 .conflicts_with("break")
@@ -157,60 +111,30 @@ pub(crate) fn add_args_for_subcommand<'a>(command: Command<'a>) -> Command<'a> {
     command
 }
 
-pub(crate) fn add_args_for_creation<'a>(app: App<'a, 'a>) -> App<'a, 'a> {
-    let app = app
-        .arg(
-            Arg::with_name("work")
-                .help("The focus time. Unit is minutes")
-                .takes_value(true)
-                .short("w")
-                .long("work")
-                .default_value("0"),
-        )
-        .arg(
-            Arg::with_name("break")
-                .help("The break time, Unit is minutes")
-                .takes_value(true)
-                .short("b")
-                .long("b")
-                .default_value("0"),
-        )
-        .arg(
-            Arg::with_name("default")
-                .help("The flag to create default notification, 25 mins work and 5 min break")
-                .conflicts_with("work")
-                .conflicts_with("break")
-                .short("d")
-                .long("default"),
-        );
-
-    app
-}
-
 #[cfg(test)]
 mod tests {
-    use clap::{App, Arg};
+    use clap_v3::{Arg, Command};
 
-    use super::{add_args_for_creation, get_app, get_config_app, parse_arg};
+    use super::{add_args_for_create_subcommand, get_command, get_config_command, parse_arg};
 
     #[test]
-    fn test_get_app() {
-        let app = get_app();
+    fn test_get_command() {
+        let app = get_command();
         assert_eq!(app.get_name(), "pomodoro");
     }
 
     #[test]
     fn test_parse_arg() {
-        let m = App::new("myapp")
-            .arg(Arg::with_name("id").takes_value(true))
+        let m = Command::new("myapp")
+            .arg(Arg::new("id").takes_value(true))
             .get_matches_from("myapp abc".split_whitespace());
 
         // parse as expected
         let id = parse_arg::<String>(&m, "id").unwrap_or_else(|e| panic!("An error occurs: {}", e));
         assert!(id.eq("abc"));
 
-        let m = App::new("myapp")
-            .arg(Arg::with_name("id").takes_value(true))
+        let m = Command::new("myapp")
+            .arg(Arg::new("id").takes_value(true))
             .get_matches_from("myapp abc".split_whitespace());
 
         // error when parsing
@@ -226,9 +150,9 @@ mod tests {
     #[test]
     fn test_add_args_for_creation() {
         // test work and break
-        let app = App::new("myapp");
-        let matches =
-            add_args_for_creation(app).get_matches_from("myapp -w 25 -b 5".split_whitespace());
+        let cmd = Command::new("myapp");
+        let matches = add_args_for_create_subcommand(cmd)
+            .get_matches_from("myapp -w 25 -b 5".split_whitespace());
 
         let work = matches.value_of("work").unwrap();
         assert!(work.eq("25"));
@@ -236,17 +160,18 @@ mod tests {
         assert!(r#break.eq("5"));
 
         // test default
-        let app = App::new("myapp");
-        let matches = add_args_for_creation(app).get_matches_from("myapp -d".split_whitespace());
+        let cmd = Command::new("myapp");
+        let matches =
+            add_args_for_create_subcommand(cmd).get_matches_from("myapp -d".split_whitespace());
 
         assert!(matches.is_present("default"));
     }
 
     #[test]
-    fn test_config_app() {
-        let app =
-            get_config_app().get_matches_from("pomodoro -c credential.json".split_whitespace());
-        let config = app.value_of("config").unwrap();
+    fn test_config_command() {
+        let cmd =
+            get_config_command().get_matches_from("pomodoro -c credential.json".split_whitespace());
+        let config = cmd.value_of("config").unwrap();
         assert_eq!(config, "credential.json");
     }
 }

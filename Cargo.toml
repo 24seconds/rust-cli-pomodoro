@@ -19,7 +19,6 @@ exclude = ["/assets"]
 
 [dependencies]
 tokio = { version = "1.17.0", features = ["macros", "rt-multi-thread", "time", "sync"] }
-clap = "2.33.3"
 clap-v3 = { package = "clap", version = "3.1.10" }
 chrono = "0.4.19"
 chrono-tz=  "0.6.0"

@@ -1,8 +1,7 @@
 use crate::argument::{parse_arg, DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
 use crate::Notification;
 use chrono::{DateTime, Utc};
-use clap::ArgMatches;
-use clap_v3;
+use clap_v3::ArgMatches;
 use std::error::Error;
 use std::io::{BufRead, Write};
 
@@ -31,7 +30,7 @@ where
 }
 
 pub fn get_new_notification(
-    matches: &clap_v3::ArgMatches,
+    matches: &ArgMatches,
     id_manager: &mut u16,
     created_at: DateTime<Utc>,
 ) -> Result<Option<Notification>, Box<dyn Error>> {
@@ -70,10 +69,10 @@ fn get_new_id(id_manager: &mut u16) -> u16 {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{DateTime, Utc};
-    use clap::App;
+    use chrono::Utc;
+    use clap_v3::Command;
 
-    use crate::argument::add_args_for_creation;
+    use crate::argument::add_args_for_create_subcommand;
 
     use super::{get_new_notification, read_input};
 
@@ -88,9 +87,9 @@ mod tests {
 
     #[test]
     fn test_get_new_notification() {
-        let app = App::new("myapp");
-        let matches =
-            add_args_for_creation(app).get_matches_from("myapp -w 25 -b 5".split_whitespace());
+        let cmd = Command::new("myapp");
+        let matches = add_args_for_create_subcommand(cmd)
+            .get_matches_from("myapp -w 25 -b 5".split_whitespace());
         let mut id_manager = 0;
         let now = Utc::now();
 
