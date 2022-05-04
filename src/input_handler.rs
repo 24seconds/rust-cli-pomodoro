@@ -5,7 +5,7 @@ use clap::ArgMatches;
 use std::error::Error;
 use std::io::{BufRead, Write};
 
-pub fn read_command<R, W>(stdout: &mut W, stdin: &mut R) -> String
+pub fn read_input<R, W>(stdout: &mut W, stdin: &mut R) -> String
 where
     R: BufRead,
     W: Write,
@@ -30,7 +30,7 @@ where
 }
 
 pub fn get_new_notification(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     id_manager: &mut u16,
     created_at: DateTime<Utc>,
 ) -> Result<Option<Notification>, Box<dyn Error>> {
@@ -69,27 +69,27 @@ fn get_new_id(id_manager: &mut u16) -> u16 {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{DateTime, Utc};
-    use clap::App;
+    use chrono::Utc;
+    use clap::Command;
 
-    use crate::argument::add_args_for_creation;
+    use crate::argument::add_args_for_create_subcommand;
 
-    use super::{get_new_notification, read_command};
+    use super::{get_new_notification, read_input};
 
     #[test]
     fn test_read_command() {
         let mut input = &b"list"[..];
         let mut output = Vec::new();
 
-        let command = read_command(&mut output, &mut input);
+        let command = read_input(&mut output, &mut input);
         assert_eq!("list", command);
     }
 
     #[test]
     fn test_get_new_notification() {
-        let app = App::new("myapp");
-        let matches =
-            add_args_for_creation(app).get_matches_from("myapp -w 25 -b 5".split_whitespace());
+        let cmd = Command::new("myapp");
+        let matches = add_args_for_create_subcommand(cmd)
+            .get_matches_from("myapp -w 25 -b 5".split_whitespace());
         let mut id_manager = 0;
         let now = Utc::now();
 
