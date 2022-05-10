@@ -1,6 +1,5 @@
 use clap::ArgMatches;
 use std::error::Error;
-use std::result;
 use tokio::net::UnixDatagram;
 
 use crate::command::handler::HandleResult;
