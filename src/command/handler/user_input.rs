@@ -7,6 +7,7 @@ use std::sync::Arc;
 use tabled::{Style, TableIteratorExt};
 
 use crate::command::handler::HandleResult;
+use crate::command::output::{OutputAccumulater, OutputType};
 use crate::command::util;
 use crate::command::{self, action::ActionType};
 use crate::notification::notify::notify_work;
@@ -20,10 +21,11 @@ pub async fn handle(
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
     configuration: &Arc<Configuration>,
-) -> Result<Vec<String>, Box<dyn Error>> {
+) -> Result<OutputAccumulater, Box<dyn Error>> {
     let command = command::get_main_command();
     let input = user_input.split_whitespace();
-    let mut output_accumulator = Vec::new();
+    let mut output_accumulator = OutputAccumulater::new();
+
     debug!("input: {:?}", input);
 
     let matches = match get_matches(command, input, &mut output_accumulator)? {
@@ -84,7 +86,7 @@ async fn handle_create(
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
     id_manager: &mut u16,
-    output_accumulator: &mut Vec<String>,
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleResult {
     let notification = get_new_notification(matches, id_manager, Utc::now())?;
 
@@ -101,15 +103,18 @@ async fn handle_create(
             );
 
             notification_task_map.lock().unwrap().insert(id, handle);
-            println!("Notification (id: {}) created", id);
-            output_accumulator.push(format!("Notification (id: {}) created", id));
+            output_accumulator.push(
+                OutputType::Println,
+                format!("Notification (id: {}) created", id),
+            );
 
             Ok(())
         }
         None => {
-            output_accumulator.push(String::from(
-                "work_time and break_time both can not be zero both",
-            ));
+            output_accumulator.push(
+                OutputType::Println,
+                String::from("work_time and break_time both can not be zero both"),
+            );
 
             Ok(())
         }
@@ -122,7 +127,7 @@ async fn handle_queue(
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
     id_manager: &mut u16,
-    output_accumulator: &mut Vec<String>,
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleResult {
     let created_at = match db::read_last_expired_notification(glue.clone()).await {
         Some(n) => {
@@ -149,8 +154,10 @@ async fn handle_queue(
                     notification,
                 ),
             );
-            println!("Notification (id: {}) created and queued", id);
-            output_accumulator.push(format!("Notification (id: {}) created and queued", id));
+            output_accumulator.push(
+                OutputType::Println,
+                format!("Notification (id: {}) created and queued", id),
+            );
 
             Ok(())
         }
@@ -162,7 +169,7 @@ async fn handle_delete(
     sub_matches: &ArgMatches,
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
-    output_accumulator: &mut Vec<String>,
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleResult {
     if sub_matches.is_present("id") {
         // delete one
@@ -171,12 +178,13 @@ async fn handle_delete(
 
         match delete_notification(id, notification_task_map.clone(), glue.clone()).await {
             Ok(_) => {
-                println!("Notification (id: {}) deleted", id);
-                output_accumulator.push(format!("Notification (id: {}) deleted", id));
+                output_accumulator.push(
+                    OutputType::Println,
+                    format!("Notification (id: {}) deleted", id),
+                );
             }
             Err(e) => {
-                eprintln!("Error: {}", e);
-                output_accumulator.push(format!("Error: {}", e));
+                output_accumulator.push(OutputType::Error, format!("Error: {}", e));
             }
         };
         debug!("Message::Delete done");
@@ -188,8 +196,10 @@ async fn handle_delete(
             handle.abort();
         }
         db::delete_and_archive_all_notification(glue.clone()).await;
-        println!("All Notifications deleted");
-        output_accumulator.push(String::from("All Notifications deleted"));
+        output_accumulator.push(
+            OutputType::Println,
+            String::from("All Notifications deleted"),
+        );
         debug!("Message::DeleteAll done");
     }
 
@@ -198,21 +208,22 @@ async fn handle_delete(
 
 async fn handle_test(
     configuration: &Arc<Configuration>,
-    output_accumulator: &mut Vec<String>,
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleResult {
     debug!("Message:NotificationTest called!");
     let report = notify_work(&configuration.clone()).await?;
-    info!("\n{}", report);
-    output_accumulator.push(format!("\n{}", report));
+    output_accumulator.push(OutputType::Info, format!("\n{}", report));
 
     debug!("Message:NotificationTest done");
-    println!("Notification Test called");
-    output_accumulator.push(String::from("Notification Test called"));
+    output_accumulator.push(
+        OutputType::Println,
+        String::from("Notification Test called"),
+    );
 
     Ok(())
 }
 
-async fn handle_list(glue: &ArcGlue, output_accumulator: &mut Vec<String>) -> HandleResult {
+async fn handle_list(glue: &ArcGlue, output_accumulator: &mut OutputAccumulater) -> HandleResult {
     debug!("Message::List called!");
     let notifications = db::list_notification(glue.clone()).await;
     debug!("Message::List done");
@@ -221,16 +232,17 @@ async fn handle_list(glue: &ArcGlue, output_accumulator: &mut Vec<String>) -> Ha
         .table()
         .with(Style::modern().horizontal_off())
         .to_string();
-    info!("\n{}", table);
-    output_accumulator.push(format!("\n{}", table));
 
-    println!("List succeed");
-    output_accumulator.push(String::from("List succeed"));
+    output_accumulator.push(OutputType::Info, format!("\n{}", table));
+    output_accumulator.push(OutputType::Println, String::from("List succeed"));
 
     Ok(())
 }
 
-async fn handle_history(glue: &ArcGlue, output_accumulator: &mut Vec<String>) -> HandleResult {
+async fn handle_history(
+    glue: &ArcGlue,
+    output_accumulator: &mut OutputAccumulater,
+) -> HandleResult {
     debug!("Message:History called!");
     let archived_notifications = db::list_archived_notification(glue.clone()).await;
     debug!("Message:History done!");
@@ -239,11 +251,8 @@ async fn handle_history(glue: &ArcGlue, output_accumulator: &mut Vec<String>) ->
         .table()
         .with(Style::modern().horizontal_off())
         .to_string();
-    info!("\n{}", table);
-    output_accumulator.push(format!("\n{}", table));
-
-    println!("History succeed");
-    output_accumulator.push(String::from("History succeed"));
+    output_accumulator.push(OutputType::Info, format!("\n{}", table));
+    output_accumulator.push(OutputType::Println, String::from("History succeed"));
 
     Ok(())
 }
@@ -251,7 +260,7 @@ async fn handle_history(glue: &ArcGlue, output_accumulator: &mut Vec<String>) ->
 fn get_matches(
     command: Command,
     input: SplitWhitespace,
-    output_accumulator: &mut Vec<String>,
+    output_accumulator: &mut OutputAccumulater,
 ) -> Result<Option<ArgMatches>, Box<dyn Error>> {
     match command.try_get_matches_from(input) {
         Ok(args) => Ok(Some(args)),
@@ -261,13 +270,12 @@ fn get_matches(
                 ErrorKind::DisplayHelp => {
                     // print!("\n{}\n", err);
                     // TODO(young): test format! works well
-                    output_accumulator.push(format!("\n{}\n", err));
+                    output_accumulator.push(OutputType::Print, format!("\n{}\n", err));
                     return Ok(None);
                 }
                 // clap automatically print version string with out newline.
                 ErrorKind::DisplayVersion => {
-                    // println!();
-                    output_accumulator.push(String::from(""));
+                    output_accumulator.push(OutputType::Println, String::from(""));
                     return Ok(None);
                 }
                 _ => {
