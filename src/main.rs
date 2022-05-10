@@ -27,7 +27,7 @@ use crate::notification::archived_notification;
 use crate::notification::notify::{notify_break, notify_work};
 use crate::notification::Notification;
 use crate::{
-    command::{handler, CommandType},
+    command::{handler, util, CommandType},
     ipc::{get_uds_address, UdsType},
 };
 
@@ -132,6 +132,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 debug!("input: {:?}", user_input);
+                util::print_start_up();
             }
         }
         CommandType::UdsClient(matches) => {
@@ -192,7 +193,7 @@ pub fn spawn_notification(
             if let Ok(report) = result {
                 info!("\n{}", report);
                 println!("Notification report generated");
-                command::util::write_output(&mut io::stdout());
+                util::write_output(&mut io::stdout());
             }
         }
 
@@ -206,7 +207,7 @@ pub fn spawn_notification(
             if let Ok(report) = result {
                 info!("\n{}", report);
                 println!("Notification report generated");
-                command::util::write_output(&mut io::stdout());
+                util::write_output(&mut io::stdout());
             }
         }
 
@@ -221,9 +222,11 @@ pub fn spawn_notification(
 
 fn spawn_stdinput_handler(tx: Sender<UserInput>) -> JoinHandle<()> {
     tokio::spawn(async move {
+        util::print_start_up();
+
         loop {
             debug!("inside stdin task");
-            let user_input = command::util::read_input(&mut io::stdout(), &mut io::stdin().lock());
+            let user_input = util::read_input(&mut io::stdin().lock());
             debug!("user input: {}", &user_input);
 
             let _ = tx

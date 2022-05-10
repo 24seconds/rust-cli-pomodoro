@@ -1,4 +1,4 @@
-use std::io::{BufRead, Write};
+use std::io::{self, BufRead, Write};
 use std::{error::Error, str::FromStr};
 
 use clap::ArgMatches;
@@ -33,20 +33,22 @@ where
     Ok(parsed)
 }
 
-pub fn read_input<R, W>(stdout: &mut W, stdin: &mut R) -> String
+pub fn read_input<R>(stdin: &mut R) -> String
 where
     R: BufRead,
-    W: Write,
 {
-    write!(stdout, "> ").unwrap();
-    stdout.flush().expect("could not flush stdout");
-
     let mut command = String::new();
 
     stdin.read_line(&mut command).expect("failed to read line");
     let command = command.trim().to_string();
 
     command
+}
+
+pub fn print_start_up() {
+    let stdout = &mut io::stdout();
+    write!(stdout, "> ").unwrap();
+    stdout.flush().expect("could not flush stdout");
 }
 
 pub fn write_output<W>(stdout: &mut W)
