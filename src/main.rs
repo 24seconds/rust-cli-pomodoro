@@ -94,19 +94,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 match handler::user_input::handle(input, &mut id_manager, &hash_map, &glue, &config)
                     .await
                 {
-                    Ok(output) => match user_input.source {
-                        InputSource::StandardInput => {
-                            output.iter().for_each(|o| println!("{}", o));
-                        }
+                    Ok(mut output) => match user_input.source {
+                        InputSource::StandardInput => {}
                         InputSource::UnixDomainSocket => {
                             let client_addr = get_uds_address(UdsType::Client);
-                            server_tx
-                                .send_to(
-                                    MessageResponse::new(output).encode()?.as_slice(),
-                                    client_addr,
-                                )
-                                .await
-                                .unwrap();
+                            ipc::send_to(
+                                &server_tx,
+                                client_addr,
+                                MessageResponse::new(output.take_body())
+                                    .encode()?
+                                    .as_slice(),
+                            )
+                            .await;
                         }
                     },
                     Err(e) => {
@@ -116,18 +115,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             InputSource::StandardInput => {}
                             InputSource::UnixDomainSocket => {
                                 let client_addr = get_uds_address(UdsType::Client);
-                                server_tx
-                                    .send_to(
-                                        MessageResponse::new(vec![format!(
-                                            "There was an error analyzing the input: {}",
-                                            e
-                                        )])
-                                        .encode()?
-                                        .as_slice(),
-                                        client_addr,
-                                    )
-                                    .await
-                                    .unwrap();
+                                ipc::send_to(
+                                    &server_tx,
+                                    client_addr,
+                                    MessageResponse::new(vec![format!(
+                                        "There was an error analyzing the input: {}",
+                                        e
+                                    )])
+                                    .encode()?
+                                    .as_slice(),
+                                )
+                                .await;
                             }
                         }
                     }

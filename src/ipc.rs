@@ -11,6 +11,8 @@ use crate::UserInput;
 const SOCKET_SERVER_ADDR: &str = "rust-cli-pomodoro-server.sock";
 const SOCKET_CLIENT_ADDR: &str = "rust-cli-pomodoro-client.sock";
 
+const CHUNK: usize = 2048;
+
 pub enum UdsType {
     Server,
     Client,
@@ -162,4 +164,22 @@ pub fn get_uds_address(r#type: UdsType) -> PathBuf {
     p.push(socket_addr);
 
     p
+}
+
+pub async fn send_to(socket: &UnixDatagram, target: PathBuf, buf: &[u8]) {
+    let size = buf.len();
+    debug!("buf length: {}", size);
+    debug!("size / CHUNK: {}", size / CHUNK);
+
+    for i in 0..size / CHUNK + 1 {
+        let (start, end) = (CHUNK * i, CHUNK * (i + 1));
+        let end = if end > size { size } else { end };
+
+        let buf = &buf[start..end];
+        debug!("buf length to be sent: {}", buf.len());
+        socket.send_to(buf, &target).await.unwrap();
+    }
+
+    let fin = Vec::new();
+    socket.send_to(fin.as_slice(), &target).await.unwrap();
 }

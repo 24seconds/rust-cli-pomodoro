@@ -7,7 +7,7 @@ use crate::command::handler::HandleResult;
 use crate::command::util;
 use crate::ipc::{MessageRequest, MessageResponse};
 
-const BUFFER_LENGTH: usize = 4096;
+const BUFFER_LENGTH: usize = 1_000_000;
 
 // TODO(young): handle error properly
 pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleResult {
@@ -116,10 +116,27 @@ async fn handle_history(socket: UnixDatagram) -> HandleResult {
 }
 
 async fn decode_and_print_message(socket: UnixDatagram) -> HandleResult {
-    let mut buf = vec![0u8; BUFFER_LENGTH];
-    let (size, _) = socket.recv_from(&mut buf).await?;
-    let dgram = &buf[..size];
+    let mut vec = Vec::new();
+    let mut total_size = 0;
+    loop {
+        let mut buf = vec![0u8; BUFFER_LENGTH];
+        let (size, _) = socket.recv_from(&mut buf).await?;
+        debug!("decode_and_print_message, size: {}", size);
 
+        let dgram = &buf[..size];
+        debug!("dgram len: {:?}", dgram.len());
+        vec.extend_from_slice(dgram);
+        debug!("vec length: {:?}", vec.len());
+
+        total_size += size;
+
+        if size == 0 {
+            break;
+        }
+    }
+
+    debug!("total_size: {}", total_size);
+    let dgram = &vec.as_slice()[..total_size];
     MessageResponse::decode(dgram)?.print();
 
     Ok(())
