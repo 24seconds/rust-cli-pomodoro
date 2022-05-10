@@ -18,7 +18,7 @@ exclude = ["/assets"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.17.0", features = ["macros", "rt-multi-thread", "time", "sync"] }
+tokio = { version = "1.18.1", features = ["macros", "rt-multi-thread", "time", "sync"] }
 clap = "3.1.10"
 chrono = "0.4.19"
 chrono-tz=  "0.6.0"
@@ -28,9 +28,10 @@ log = "0.4.0"
 env_logger = "0.9.0"
 tabled = { version = "0.5.0", features = ["color"]}
 serde_json = "1.0.59"
-serde = "1.0.130"
+serde = "1.0.137"
 reqwest = { version = "0.11", features = ["json"] }
 colored = "2"
+bincode = { version = "2.0.0-rc.1", features = ["alloc"]}
 
 [[bin]]
 name = "pomodoro"

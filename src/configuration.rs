@@ -1,15 +1,15 @@
-use colored::{ColoredString, Colorize};
+use clap::ArgMatches;
 use serde::Deserialize;
-use tabled::{Style, Table, Tabled};
-
 use std::env;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::sync::Arc;
 
 use crate::error::ConfigurationError;
+use crate::report::generate_configuration_report;
 
 pub const SLACK_API_URL: &str = "https://slack.com/api/chat.postMessage";
 
@@ -55,6 +55,16 @@ impl Configuration {
     }
 }
 
+pub fn get_configuration(matches: &ArgMatches) -> Result<Arc<Configuration>, Box<dyn Error>> {
+    let credential_file_path = matches.value_of("config");
+
+    let (configuration, config_error) = load_configuration(credential_file_path)?;
+    let report = generate_configuration_report(&configuration, config_error);
+    info!("\nconfig flag result!\n{}", report);
+
+    Ok(Arc::new(configuration))
+}
+
 pub fn load_configuration(
     credential_file: Option<&str>,
 ) -> Result<(Configuration, Option<ConfigurationError>), Box<dyn Error>> {
@@ -87,77 +97,6 @@ fn get_configuration_from_file<P: AsRef<Path> + AsRef<OsStr>>(
 
     let c = serde_json::from_reader(reader).map_err(ConfigurationError::JsonError)?;
     Ok(c)
-}
-
-#[derive(Tabled)]
-struct Report {
-    ok: ColoredString,
-    desc: String,
-    reason: ColoredString,
-}
-
-impl Report {
-    pub fn new(ok: &'static str, desc: &'static str) -> Self {
-        Report {
-            ok: ok.green(),
-            desc: String::from(desc),
-            reason: ColoredString::default(),
-        }
-    }
-
-    // TODO(young): e should be string or ConfigurationError?
-    pub fn update_reason(mut self, e: ConfigurationError) -> Self {
-        let mut vec = vec![format!("{}", e)];
-        if let Some(s) = e.source() {
-            vec.push(s.to_string());
-        }
-
-        self.reason = vec.join("\n").red();
-
-        self
-    }
-}
-
-pub fn generate_configuration_report(
-    config: &Configuration,
-    err: Option<ConfigurationError>,
-) -> String {
-    let config_err_message = match err {
-        Some(e) => Report::new("X", "config err").update_reason(e),
-        None => Report::new("O", "config err"),
-    };
-
-    let slack_channel_message = match config.get_slack_channel() {
-        // TODO(young): Reason?
-        Some(_) => Report::new("O", "slack_channel"),
-        None => {
-            Report::new("X", "slack_channel").update_reason(ConfigurationError::SlackConfigNotFound)
-        }
-    };
-
-    let slack_token_message = match config.get_slack_channel() {
-        // TODO(young): Reason?
-        Some(_) => Report::new("O", "slack_token"),
-        None => {
-            Report::new("X", "slack_token").update_reason(ConfigurationError::SlackConfigNotFound)
-        }
-    };
-
-    let discord_webhook_url_message = match config.get_discord_webhook_url() {
-        // TODO(young): Reason?
-        Some(_) => Report::new("O", "discord_webhook_url"),
-        None => Report::new("X", "discord_webhook_url")
-            .update_reason(ConfigurationError::DiscordConfigNotFound),
-    };
-
-    Table::new(vec![
-        config_err_message,
-        slack_channel_message,
-        slack_token_message,
-        discord_webhook_url_message,
-    ])
-    .with(Style::modern())
-    .to_string()
 }
 
 #[cfg(test)]
