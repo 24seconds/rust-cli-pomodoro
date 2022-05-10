@@ -1,72 +1,25 @@
-use std::sync::Arc;
-use std::error::Error;
-
 use clap::{Arg, ArgMatches, Command};
+use std::sync::Arc;
 
+use crate::command::action::ActionType;
 use crate::configuration::Configuration;
 
-const CREATE: &str = "create";
-const QUEUE: &str = "queue";
-const Q: &str = "q";
-const DELETE: &str = "delete";
-const LIST: &str = "list";
-const LS: &str = "ls";
-const TEST: &str = "test";
-const EXIT: &str = "exit";
-const CLEAR: &str = "clear";
-const HISTORY: &str = "history";
+pub const CREATE: &str = "create";
+pub const QUEUE: &str = "queue";
+pub const Q: &str = "q";
+pub const DELETE: &str = "delete";
+pub const LIST: &str = "list";
+pub const LS: &str = "ls";
+pub const TEST: &str = "test";
+pub const EXIT: &str = "exit";
+pub const CLEAR: &str = "clear";
+pub const HISTORY: &str = "history";
 
 const AUTHOR: &str = "Young";
 const BINARY_NAME: &str = "pomodoro";
 
 pub const DEFAULT_WORK_TIME: u16 = 25;
 pub const DEFAULT_BREAK_TIME: u16 = 5;
-
-pub enum ActionType {
-    CREATE,
-    QUEUE,
-    DELETE,
-    LIST,
-    TEST,
-    EXIT,
-    CLEAR,
-    HISTORY,
-}
-
-impl ActionType {
-    // TODO(young): handle error
-    pub fn parse(s: &str) -> Result<Self, Box<dyn Error>> {
-        match s.to_lowercase().as_str() {
-            CREATE => Ok(ActionType::CREATE),
-            Q | QUEUE => Ok(ActionType::QUEUE),
-            DELETE => Ok(ActionType::DELETE),
-            LS | LIST => Ok(ActionType::LIST),
-            TEST => Ok(ActionType::TEST),
-            EXIT => Ok(ActionType::EXIT),
-            CLEAR => Ok(ActionType::CLEAR),
-            HISTORY => Ok(ActionType::HISTORY),
-            _ => Err(Box::from(format!(
-                "failed to parse str ({}) to ActionType",
-                s
-            ))),
-        }
-    }
-}
-
-impl From<ActionType> for String {
-    fn from(action: ActionType) -> Self {
-        match action {
-            ActionType::CREATE => String::from(CREATE),
-            ActionType::QUEUE => String::from(QUEUE),
-            ActionType::DELETE => String::from(DELETE),
-            ActionType::LIST => String::from(LIST),
-            ActionType::TEST => String::from(TEST),
-            ActionType::EXIT => String::from(EXIT),
-            ActionType::CLEAR => String::from(CLEAR),
-            ActionType::HISTORY => String::from(HISTORY),
-        }
-    }
-}
 
 pub enum CommandType {
     StartUp(Arc<Configuration>),
@@ -108,18 +61,18 @@ pub fn get_main_command() -> Command<'static> {
 fn get_common_subcommands() -> Vec<Command<'static>> {
     vec![
         {
-            let cmd = Command::new(ActionType::CREATE)
+            let cmd = Command::new(ActionType::Create)
                 .alias("c")
                 .about("create the notification");
             add_args_for_create_subcommand(cmd)
         },
         {
-            let cmd = Command::new(ActionType::QUEUE)
+            let cmd = Command::new(ActionType::Queue)
                 .alias(Q)
                 .about("create the notification");
             add_args_for_create_subcommand(cmd)
         },
-        Command::new(ActionType::DELETE)
+        Command::new(ActionType::Delete)
             .alias("d")
             .about("delete a notification")
             .arg(
@@ -134,11 +87,11 @@ fn get_common_subcommands() -> Vec<Command<'static>> {
                     .help("The flag to delete all notifications")
                     .short('a'),
             ),
-        Command::new(ActionType::LIST)
+        Command::new(ActionType::List)
             .alias(LS)
             .about("list notifications"),
-        Command::new(ActionType::HISTORY).about("show archived notifications"),
-        Command::new(ActionType::TEST).about("test notification"),
+        Command::new(ActionType::History).about("show archived notifications"),
+        Command::new(ActionType::Test).about("test notification"),
     ]
 }
 

@@ -2,9 +2,9 @@ use clap::ArgMatches;
 use std::error::Error;
 use tokio::net::UnixDatagram;
 
+use crate::command::action::ActionType;
 use crate::command::handler::HandleResult;
 use crate::command::util;
-use crate::command::ActionType;
 use crate::ipc::{MessageRequest, MessageResponse};
 
 const BUFFER_LENGTH: usize = 4096;
@@ -17,14 +17,14 @@ pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleResult {
         .and_then(|(s, sub_matches)| ActionType::parse(s).map(|s| (s, sub_matches)))?;
 
     match action_type {
-        ActionType::CREATE => handle_create(socket, sub_matches).await?,
-        ActionType::QUEUE => handle_queue(socket, sub_matches).await?,
-        ActionType::DELETE => handle_delete(socket, sub_matches).await?,
-        ActionType::LIST => handle_list(socket).await?,
-        ActionType::TEST => handle_test(socket).await?,
-        ActionType::HISTORY => handle_history(socket).await?,
-        ActionType::EXIT | ActionType::CLEAR => {
-            info!("EXIT or CLEAR is not supported action for unix domain client")
+        ActionType::Create => handle_create(socket, sub_matches).await?,
+        ActionType::Queue => handle_queue(socket, sub_matches).await?,
+        ActionType::Delete => handle_delete(socket, sub_matches).await?,
+        ActionType::List => handle_list(socket).await?,
+        ActionType::Test => handle_test(socket).await?,
+        ActionType::History => handle_history(socket).await?,
+        ActionType::Exit | ActionType::Clear => {
+            info!("Exit or Clear is not supported action for unix domain client")
         }
     }
 
@@ -32,7 +32,7 @@ pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleResult {
 }
 
 async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleResult {
-    let (work_time, break_time) = util::parse_work_and_break_time(&sub_matches)?;
+    let (work_time, break_time) = util::parse_work_and_break_time(sub_matches)?;
 
     socket
         .send(
@@ -51,7 +51,7 @@ async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> Handle
 }
 
 async fn handle_queue(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleResult {
-    let (work_time, break_time) = util::parse_work_and_break_time(&sub_matches)?;
+    let (work_time, break_time) = util::parse_work_and_break_time(sub_matches)?;
 
     socket
         .send(

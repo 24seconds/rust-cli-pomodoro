@@ -1,11 +1,10 @@
-use bincode;
 use std::env;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 use tokio::net::UnixDatagram;
 
-use crate::command::ActionType;
+use crate::command::action::ActionType;
 use crate::InputSource;
 use crate::UserInput;
 
@@ -50,7 +49,7 @@ impl From<MessageRequest> for UserInput {
             MessageRequest::Create { work, r#break } => {
                 format!(
                     "{} -w {} -b {}",
-                    String::from(ActionType::CREATE),
+                    String::from(ActionType::Create),
                     work,
                     r#break
                 )
@@ -58,7 +57,7 @@ impl From<MessageRequest> for UserInput {
             MessageRequest::Queue { work, r#break } => {
                 format!(
                     "{} -w {} -b {}",
-                    String::from(ActionType::QUEUE),
+                    String::from(ActionType::Queue),
                     work,
                     r#break
                 )
@@ -66,14 +65,14 @@ impl From<MessageRequest> for UserInput {
             MessageRequest::Delete { id, all } => {
                 // TODO(young): use match instead of if?
                 if all {
-                    format!("{} -a", String::from(ActionType::DELETE))
+                    format!("{} -a", String::from(ActionType::Delete))
                 } else {
-                    format!("{} -id {}", String::from(ActionType::DELETE), id)
+                    format!("{} -id {}", String::from(ActionType::Delete), id)
                 }
             }
-            MessageRequest::List => String::from(ActionType::LIST),
-            MessageRequest::Test => String::from(ActionType::TEST),
-            MessageRequest::History => String::from(ActionType::HISTORY),
+            MessageRequest::List => String::from(ActionType::List),
+            MessageRequest::Test => String::from(ActionType::Test),
+            MessageRequest::History => String::from(ActionType::History),
         };
 
         UserInput {

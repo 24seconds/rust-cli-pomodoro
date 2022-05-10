@@ -8,7 +8,7 @@ use tabled::{Style, TableIteratorExt};
 
 use crate::command::handler::HandleResult;
 use crate::command::util;
-use crate::command::{self, ActionType};
+use crate::command::{self, action::ActionType};
 use crate::notification::notify::notify_work;
 use crate::notification::{delete_notification, get_new_notification};
 use crate::{configuration::Configuration, ArcGlue};
@@ -37,7 +37,7 @@ pub async fn handle(
         .and_then(|(s, sub_matches)| ActionType::parse(s).map(|s| (s, sub_matches)))?;
 
     match action_type {
-        ActionType::CREATE => {
+        ActionType::Create => {
             handle_create(
                 sub_matches,
                 configuration,
@@ -48,7 +48,7 @@ pub async fn handle(
             )
             .await?
         }
-        ActionType::QUEUE => {
+        ActionType::Queue => {
             handle_queue(
                 sub_matches,
                 configuration,
@@ -59,7 +59,7 @@ pub async fn handle(
             )
             .await?
         }
-        ActionType::DELETE => {
+        ActionType::Delete => {
             handle_delete(
                 sub_matches,
                 notification_task_map,
@@ -68,11 +68,11 @@ pub async fn handle(
             )
             .await?
         }
-        ActionType::LIST => handle_list(glue, &mut output_accumulator).await?,
-        ActionType::TEST => handle_test(configuration, &mut output_accumulator).await?,
-        ActionType::HISTORY => handle_history(glue, &mut output_accumulator).await?,
-        ActionType::EXIT => process::exit(0),
-        ActionType::CLEAR => print!("\x1B[2J\x1B[1;1H"),
+        ActionType::List => handle_list(glue, &mut output_accumulator).await?,
+        ActionType::Test => handle_test(configuration, &mut output_accumulator).await?,
+        ActionType::History => handle_history(glue, &mut output_accumulator).await?,
+        ActionType::Exit => process::exit(0),
+        ActionType::Clear => print!("\x1B[2J\x1B[1;1H"),
     }
 
     Ok(output_accumulator)
@@ -154,7 +154,7 @@ async fn handle_queue(
 
             Ok(())
         }
-        None => return Ok(()),
+        None => Ok(()),
     }
 }
 
@@ -274,7 +274,8 @@ fn get_matches(
                     print!("\n error while handling the input, {}\n", err);
                 }
             }
-            return Err(Box::new(err));
+
+            Err(Box::new(err))
         }
     }
 }

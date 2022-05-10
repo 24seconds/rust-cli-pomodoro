@@ -57,7 +57,6 @@ where
     stdout.flush().expect("couldn't flush stdout");
 }
 
-
 #[cfg(test)]
 mod tests {
     use clap::{Arg, Command};
