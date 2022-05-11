@@ -1,11 +1,12 @@
 use std::io::{self, BufRead, Write};
-use std::{error::Error, str::FromStr};
+use std::str::FromStr;
 
 use clap::ArgMatches;
 
 use crate::command::{DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
+use crate::error::ParseError;
 
-pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), Box<dyn Error>> {
+pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), ParseError> {
     let (work_time, break_time) = if matches.is_present("default") {
         (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
     } else {
@@ -18,17 +19,19 @@ pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), Box
     Ok((work_time, break_time))
 }
 
-pub fn parse_arg<C>(arg_matches: &ArgMatches, arg_name: &str) -> Result<C, Box<dyn Error>>
+pub fn parse_arg<C>(arg_matches: &ArgMatches, arg_name: &str) -> Result<C, ParseError>
 where
     C: FromStr,
 {
     let str = arg_matches
         .value_of(arg_name)
-        .ok_or(format!("failed to get ({}) from cli", arg_name))?;
+        .ok_or(format!("failed to get ({}) from cli", arg_name))
+        .map_err(ParseError::new)?;
 
     let parsed = str
         .parse::<C>()
-        .map_err(|_| format!("failed to parse arg ({})", str))?;
+        .map_err(|_| format!("failed to parse arg ({})", str))
+        .map_err(ParseError::new)?;
 
     Ok(parsed)
 }

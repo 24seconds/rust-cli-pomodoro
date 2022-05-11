@@ -11,6 +11,7 @@ use std::error::Error;
 use tabled::Tabled;
 
 use crate::db;
+use crate::error::NotificationError;
 use crate::{command::util, ArcGlue, ArcTaskMap};
 
 /// The notification schema used to store to database
@@ -227,8 +228,9 @@ pub fn get_new_notification(
     matches: &ArgMatches,
     id_manager: &mut u16,
     created_at: DateTime<Utc>,
-) -> Result<Option<Notification>, Box<dyn Error>> {
-    let (work_time, break_time) = util::parse_work_and_break_time(matches)?;
+) -> Result<Option<Notification>, NotificationError> {
+    let (work_time, break_time) =
+        util::parse_work_and_break_time(matches).map_err(NotificationError::NewNotification)?;
 
     debug!("work_time: {}", work_time);
     debug!("break_time: {}", break_time);

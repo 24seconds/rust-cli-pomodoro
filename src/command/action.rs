@@ -1,6 +1,7 @@
-use std::error::Error;
-
-use crate::command::application::{CLEAR, CREATE, DELETE, EXIT, HISTORY, LIST, LS, Q, QUEUE, TEST};
+use crate::{
+    command::application::{CLEAR, CREATE, DELETE, EXIT, HISTORY, LIST, LS, Q, QUEUE, TEST},
+    error::ParseError,
+};
 
 pub enum ActionType {
     Create,
@@ -15,7 +16,7 @@ pub enum ActionType {
 
 impl ActionType {
     // TODO(young): handle error
-    pub fn parse(s: &str) -> Result<Self, Box<dyn Error>> {
+    pub fn parse(s: &str) -> Result<Self, ParseError> {
         match s.to_lowercase().as_str() {
             CREATE => Ok(ActionType::Create),
             Q | QUEUE => Ok(ActionType::Queue),
@@ -25,7 +26,7 @@ impl ActionType {
             EXIT => Ok(ActionType::Exit),
             CLEAR => Ok(ActionType::Clear),
             HISTORY => Ok(ActionType::History),
-            _ => Err(Box::from(format!(
+            _ => Err(ParseError::new(format!(
                 "failed to parse str ({}) to ActionType",
                 s
             ))),

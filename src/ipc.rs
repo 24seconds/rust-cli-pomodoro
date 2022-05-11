@@ -1,3 +1,5 @@
+use bincode::error::DecodeError;
+use bincode::error::EncodeError;
 use std::env;
 use std::error::Error;
 use std::fs;
@@ -30,14 +32,14 @@ pub enum MessageRequest {
 
 impl MessageRequest {
     // TODO(young): handle error
-    pub fn encode(self) -> Result<Vec<u8>, Box<dyn Error>> {
+    pub fn encode(self) -> Result<Vec<u8>, EncodeError> {
         let vec = bincode::encode_to_vec(self, bincode::config::standard())?;
 
         Ok(vec)
     }
 
     // TODO(young): handle error
-    pub fn decode(byte: &[u8]) -> Result<Self, Box<dyn Error>> {
+    pub fn decode(byte: &[u8]) -> Result<Self, DecodeError> {
         let (request, _): (MessageRequest, usize) =
             bincode::decode_from_slice(byte, bincode::config::standard())?;
 
@@ -98,15 +100,13 @@ impl MessageResponse {
         &self.body
     }
 
-    // TODO(young): handle error
-    pub fn encode(self) -> Result<Vec<u8>, Box<dyn Error>> {
+    pub fn encode(self) -> Result<Vec<u8>, EncodeError> {
         let vec = bincode::encode_to_vec(self, bincode::config::standard())?;
 
         Ok(vec)
     }
 
-    // TODO(young): handle error
-    pub fn decode(byte: &[u8]) -> Result<Self, Box<dyn Error>> {
+    pub fn decode(byte: &[u8]) -> Result<Self, DecodeError> {
         let (response, _): (MessageResponse, usize) =
             bincode::decode_from_slice(byte, bincode::config::standard())?;
 

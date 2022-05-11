@@ -1,20 +1,26 @@
 use clap::ArgMatches;
-use std::error::Error;
+use std::result;
 use tokio::net::UnixDatagram;
 
 use crate::command::action::ActionType;
-use crate::command::handler::HandleResult;
 use crate::command::util;
+use crate::error::UdsHandlerError;
 use crate::ipc::{MessageRequest, MessageResponse};
 
 const BUFFER_LENGTH: usize = 1_000_000;
 
+type HandleUdsResult = result::Result<(), UdsHandlerError>;
+
 // TODO(young): handle error properly
-pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleResult {
+pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleUdsResult {
     let (action_type, sub_matches) = matches
         .subcommand()
-        .ok_or(Box::from("subcommand wasn't present at runtime") as Box<dyn Error>)
-        .and_then(|(s, sub_matches)| ActionType::parse(s).map(|s| (s, sub_matches)))?;
+        .ok_or(UdsHandlerError::NoSubcommand)
+        .and_then(|(s, sub_matches)| {
+            ActionType::parse(s)
+                .map(|s| (s, sub_matches))
+                .map_err(UdsHandlerError::ParseError)
+        })?;
 
     match action_type {
         ActionType::Create => handle_create(socket, sub_matches).await?,
@@ -31,8 +37,9 @@ pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleResult {
     Ok(())
 }
 
-async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleResult {
-    let (work_time, break_time) = util::parse_work_and_break_time(sub_matches)?;
+async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
+    let (work_time, break_time) =
+        util::parse_work_and_break_time(sub_matches).map_err(UdsHandlerError::ParseError)?;
 
     socket
         .send(
@@ -40,18 +47,21 @@ async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> Handle
                 work: work_time,
                 r#break: break_time,
             }
-            .encode()?
+            .encode()
+            .map_err(UdsHandlerError::EncodeFailed)?
             .as_slice(),
         )
-        .await?;
+        .await
+        .map_err(UdsHandlerError::SocketError)?;
 
     decode_and_print_message(socket).await?;
 
     Ok(())
 }
 
-async fn handle_queue(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleResult {
-    let (work_time, break_time) = util::parse_work_and_break_time(sub_matches)?;
+async fn handle_queue(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
+    let (work_time, break_time) =
+        util::parse_work_and_break_time(sub_matches).map_err(UdsHandlerError::ParseError)?;
 
     socket
         .send(
@@ -59,68 +69,102 @@ async fn handle_queue(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleR
                 work: work_time,
                 r#break: break_time,
             }
-            .encode()?
+            .encode()
+            .map_err(UdsHandlerError::EncodeFailed)?
             .as_slice(),
         )
-        .await?;
+        .await
+        .map_err(UdsHandlerError::SocketError)?;
 
     decode_and_print_message(socket).await?;
 
     Ok(())
 }
 
-async fn handle_delete(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleResult {
+async fn handle_delete(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
     let (id, all) = if sub_matches.is_present("id") {
-        (util::parse_arg::<u16>(sub_matches, "id")?, false)
+        (
+            util::parse_arg::<u16>(sub_matches, "id").map_err(UdsHandlerError::ParseError)?,
+            false,
+        )
     } else {
         (0, true)
     };
 
     socket
-        .send(MessageRequest::Delete { id, all }.encode()?.as_slice())
-        .await?;
+        .send(
+            MessageRequest::Delete { id, all }
+                .encode()
+                .map_err(UdsHandlerError::EncodeFailed)?
+                .as_slice(),
+        )
+        .await
+        .map_err(UdsHandlerError::SocketError)?;
 
     decode_and_print_message(socket).await?;
 
     Ok(())
 }
 
-async fn handle_list(socket: UnixDatagram) -> HandleResult {
+async fn handle_list(socket: UnixDatagram) -> HandleUdsResult {
     socket
-        .send(MessageRequest::List.encode()?.as_slice())
-        .await?;
+        .send(
+            MessageRequest::List
+                .encode()
+                .map_err(UdsHandlerError::EncodeFailed)?
+                .as_slice(),
+        )
+        .await
+        .map_err(UdsHandlerError::SocketError)?;
 
     decode_and_print_message(socket).await?;
 
     Ok(())
 }
 
-async fn handle_test(socket: UnixDatagram) -> HandleResult {
+async fn handle_test(socket: UnixDatagram) -> HandleUdsResult {
     socket
-        .send(MessageRequest::Test.encode()?.as_slice())
-        .await?;
+        .send(
+            MessageRequest::Test
+                .encode()
+                .map_err(UdsHandlerError::EncodeFailed)?
+                .as_slice(),
+        )
+        .await
+        .map_err(UdsHandlerError::SocketError)?;
 
     decode_and_print_message(socket).await?;
 
     Ok(())
 }
 
-async fn handle_history(socket: UnixDatagram) -> HandleResult {
+async fn handle_history(socket: UnixDatagram) -> HandleUdsResult {
     socket
-        .send(MessageRequest::History.encode()?.as_slice())
-        .await?;
+        .send(
+            MessageRequest::History
+                .encode()
+                .map_err(UdsHandlerError::EncodeFailed)?
+                .as_slice(),
+        )
+        .await
+        .map_err(UdsHandlerError::SocketError)?;
 
     decode_and_print_message(socket).await?;
 
     Ok(())
 }
 
-async fn decode_and_print_message(socket: UnixDatagram) -> HandleResult {
+async fn decode_and_print_message(socket: UnixDatagram) -> HandleUdsResult {
     let mut vec = Vec::new();
     let mut total_size = 0;
+
+    // TODO(young): set timeout to prevent infinite loop
     loop {
         let mut buf = vec![0u8; BUFFER_LENGTH];
-        let (size, _) = socket.recv_from(&mut buf).await?;
+        let (size, _) = socket
+            .recv_from(&mut buf)
+            .await
+            .map_err(UdsHandlerError::SocketError)?;
         debug!("decode_and_print_message, size: {}", size);
 
         let dgram = &buf[..size];
@@ -137,7 +181,9 @@ async fn decode_and_print_message(socket: UnixDatagram) -> HandleResult {
 
     debug!("total_size: {}", total_size);
     let dgram = &vec.as_slice()[..total_size];
-    MessageResponse::decode(dgram)?.print();
+    MessageResponse::decode(dgram)
+        .map_err(UdsHandlerError::DecodeFailed)?
+        .print();
 
     Ok(())
 }
