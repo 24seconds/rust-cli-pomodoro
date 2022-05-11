@@ -58,7 +58,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     logging::initialize_logging();
     debug!("debug test, start pomodoro...");
 
-    // TODO(young) handle result
     let command_type = detect_command_type().await?;
 
     match command_type {

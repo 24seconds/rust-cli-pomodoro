@@ -99,7 +99,6 @@ impl std::error::Error for ConfigurationError {
 #[derive(Debug)]
 pub enum UdsHandlerError {
     NoSubcommand,
-    // TODO(young): replace box to parser error
     ParseError(ParseError),
     SocketError(std::io::Error),
     EncodeFailed(EncodeError),

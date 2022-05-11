@@ -44,7 +44,6 @@ pub fn generate_configuration_report(
     };
 
     let slack_channel_message = match config.get_slack_channel() {
-        // TODO(young): Reason?
         Some(_) => Report::new("O", "slack_channel"),
         None => {
             Report::new("X", "slack_channel").update_reason(ConfigurationError::SlackConfigNotFound)
@@ -52,7 +51,6 @@ pub fn generate_configuration_report(
     };
 
     let slack_token_message = match config.get_slack_channel() {
-        // TODO(young): Reason?
         Some(_) => Report::new("O", "slack_token"),
         None => {
             Report::new("X", "slack_token").update_reason(ConfigurationError::SlackConfigNotFound)
@@ -60,7 +58,6 @@ pub fn generate_configuration_report(
     };
 
     let discord_webhook_url_message = match config.get_discord_webhook_url() {
-        // TODO(young): Reason?
         Some(_) => Report::new("O", "discord_webhook_url"),
         None => Report::new("X", "discord_webhook_url")
             .update_reason(ConfigurationError::DiscordConfigNotFound),

@@ -15,7 +15,6 @@ pub enum ActionType {
 }
 
 impl ActionType {
-    // TODO(young): handle error
     pub fn parse(s: &str) -> Result<Self, ParseError> {
         match s.to_lowercase().as_str() {
             CREATE => Ok(ActionType::Create),

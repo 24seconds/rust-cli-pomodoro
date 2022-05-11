@@ -255,7 +255,6 @@ fn get_new_id(id_manager: &mut u16) -> u16 {
     id
 }
 
-// TODO(young): refactor?
 pub async fn delete_notification(
     id: u16,
     notification_task_map: ArcTaskMap,

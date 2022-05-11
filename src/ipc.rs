@@ -1,7 +1,6 @@
 use bincode::error::DecodeError;
 use bincode::error::EncodeError;
 use std::env;
-use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 use tokio::net::UnixDatagram;
@@ -31,14 +30,12 @@ pub enum MessageRequest {
 }
 
 impl MessageRequest {
-    // TODO(young): handle error
     pub fn encode(self) -> Result<Vec<u8>, EncodeError> {
         let vec = bincode::encode_to_vec(self, bincode::config::standard())?;
 
         Ok(vec)
     }
 
-    // TODO(young): handle error
     pub fn decode(byte: &[u8]) -> Result<Self, DecodeError> {
         let (request, _): (MessageRequest, usize) =
             bincode::decode_from_slice(byte, bincode::config::standard())?;
@@ -67,7 +64,6 @@ impl From<MessageRequest> for UserInput {
                 )
             }
             MessageRequest::Delete { id, all } => {
-                // TODO(young): use match instead of if?
                 if all {
                     format!("{} -a", String::from(ActionType::Delete))
                 } else {
@@ -118,7 +114,6 @@ impl MessageResponse {
     }
 }
 
-// TODO(young): handle error type precisely instead of using dyn Error
 pub fn create_server_uds() -> Result<UnixDatagram, std::io::Error> {
     // TODO(young): handle create_uds_address error
     let server_addr = create_uds_address(UdsType::Server, true)?;
@@ -128,8 +123,6 @@ pub fn create_server_uds() -> Result<UnixDatagram, std::io::Error> {
     Ok(socket)
 }
 
-// TODO(young): handle unixdatagram error
-// TODO(young): handle create_uds_address error
 pub async fn create_client_uds() -> Result<UnixDatagram, std::io::Error> {
     let server_addr = create_uds_address(UdsType::Server, false)?;
     let client_addr = create_uds_address(UdsType::Client, true)?;

@@ -1,7 +1,6 @@
 use clap::ArgMatches;
 use serde::Deserialize;
 use std::env;
-use std::error::Error;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufReader;
