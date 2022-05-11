@@ -22,6 +22,7 @@ mod logging;
 mod report;
 
 use crate::configuration::{get_configuration, Configuration};
+use crate::error::ConfigurationError;
 use crate::ipc::{create_client_uds, create_server_uds, MessageRequest, MessageResponse};
 use crate::notification::archived_notification;
 use crate::notification::notify::{notify_break, notify_work};
@@ -148,7 +149,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn detect_command_type() -> Result<CommandType, Box<dyn Error>> {
+async fn detect_command_type() -> Result<CommandType, ConfigurationError> {
     let matches = command::get_start_and_uds_client_command().get_matches();
     debug!("handle_uds_client_command, matches: {:?}", &matches);
 

@@ -7,10 +7,10 @@ pub use notify::*;
 use chrono::{prelude::*, Duration};
 use clap::ArgMatches;
 use gluesql::core::data::Value;
-use std::error::Error;
 use tabled::Tabled;
 
 use crate::db;
+use crate::error::NotificationError;
 use crate::{command::util, ArcGlue, ArcTaskMap};
 
 /// The notification schema used to store to database
@@ -227,8 +227,9 @@ pub fn get_new_notification(
     matches: &ArgMatches,
     id_manager: &mut u16,
     created_at: DateTime<Utc>,
-) -> Result<Option<Notification>, Box<dyn Error>> {
-    let (work_time, break_time) = util::parse_work_and_break_time(matches)?;
+) -> Result<Option<Notification>, NotificationError> {
+    let (work_time, break_time) =
+        util::parse_work_and_break_time(matches).map_err(NotificationError::NewNotification)?;
 
     debug!("work_time: {}", work_time);
     debug!("break_time: {}", break_time);
@@ -259,14 +260,13 @@ pub async fn delete_notification(
     id: u16,
     notification_task_map: ArcTaskMap,
     glue: ArcGlue,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), NotificationError> {
     let notification = db::read_notification(glue.clone(), id).await;
     if notification.is_none() {
-        return Err(format!(
+        return Err(NotificationError::DeletionFail(format!(
             "deleting id ({}) failed. Corresponding notification does not exist",
             id
-        )
-        .into());
+        )));
     }
 
     {
@@ -274,12 +274,14 @@ pub async fn delete_notification(
 
         hash_map
             .get(&id)
-            .ok_or(format!("failed to corresponding task (id: {})", &id))?
+            .ok_or(format!("failed to corresponding task (id: {})", &id))
+            .map_err(NotificationError::DeletionFail)?
             .abort();
 
         hash_map
             .remove(&id)
-            .ok_or(format!("failed to remove id ({})", id))?;
+            .ok_or(format!("failed to remove id ({})", id))
+            .map_err(NotificationError::DeletionFail)?;
     }
 
     db::delete_and_archive_notification(glue, id).await;

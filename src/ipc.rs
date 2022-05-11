@@ -1,3 +1,5 @@
+use bincode::error::DecodeError;
+use bincode::error::EncodeError;
 use std::env;
 use std::error::Error;
 use std::fs;
@@ -30,14 +32,14 @@ pub enum MessageRequest {
 
 impl MessageRequest {
     // TODO(young): handle error
-    pub fn encode(self) -> Result<Vec<u8>, Box<dyn Error>> {
+    pub fn encode(self) -> Result<Vec<u8>, EncodeError> {
         let vec = bincode::encode_to_vec(self, bincode::config::standard())?;
 
         Ok(vec)
     }
 
     // TODO(young): handle error
-    pub fn decode(byte: &[u8]) -> Result<Self, Box<dyn Error>> {
+    pub fn decode(byte: &[u8]) -> Result<Self, DecodeError> {
         let (request, _): (MessageRequest, usize) =
             bincode::decode_from_slice(byte, bincode::config::standard())?;
 
@@ -98,15 +100,13 @@ impl MessageResponse {
         &self.body
     }
 
-    // TODO(young): handle error
-    pub fn encode(self) -> Result<Vec<u8>, Box<dyn Error>> {
+    pub fn encode(self) -> Result<Vec<u8>, EncodeError> {
         let vec = bincode::encode_to_vec(self, bincode::config::standard())?;
 
         Ok(vec)
     }
 
-    // TODO(young): handle error
-    pub fn decode(byte: &[u8]) -> Result<Self, Box<dyn Error>> {
+    pub fn decode(byte: &[u8]) -> Result<Self, DecodeError> {
         let (response, _): (MessageResponse, usize) =
             bincode::decode_from_slice(byte, bincode::config::standard())?;
 
@@ -119,7 +119,7 @@ impl MessageResponse {
 }
 
 // TODO(young): handle error type precisely instead of using dyn Error
-pub fn create_server_uds() -> Result<UnixDatagram, Box<dyn Error>> {
+pub fn create_server_uds() -> Result<UnixDatagram, std::io::Error> {
     // TODO(young): handle create_uds_address error
     let server_addr = create_uds_address(UdsType::Server, true)?;
     let socket = UnixDatagram::bind(server_addr)?;
@@ -130,7 +130,7 @@ pub fn create_server_uds() -> Result<UnixDatagram, Box<dyn Error>> {
 
 // TODO(young): handle unixdatagram error
 // TODO(young): handle create_uds_address error
-pub async fn create_client_uds() -> Result<UnixDatagram, Box<dyn Error>> {
+pub async fn create_client_uds() -> Result<UnixDatagram, std::io::Error> {
     let server_addr = create_uds_address(UdsType::Server, false)?;
     let client_addr = create_uds_address(UdsType::Client, true)?;
 

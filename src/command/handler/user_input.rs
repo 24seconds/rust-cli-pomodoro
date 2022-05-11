@@ -1,19 +1,21 @@
 use chrono::Utc;
 use clap::{ArgMatches, Command, ErrorKind};
-use std::error::Error;
 use std::process;
+use std::result;
 use std::str::SplitWhitespace;
 use std::sync::Arc;
 use tabled::{Style, TableIteratorExt};
 
-use crate::command::handler::HandleResult;
 use crate::command::output::{OutputAccumulater, OutputType};
 use crate::command::util;
 use crate::command::{self, action::ActionType};
+use crate::error::UserInputHandlerError;
 use crate::notification::notify::notify_work;
 use crate::notification::{delete_notification, get_new_notification};
 use crate::{configuration::Configuration, ArcGlue};
 use crate::{db, spawn_notification, ArcTaskMap};
+
+type HandleUserInputResult = result::Result<(), UserInputHandlerError>;
 
 pub async fn handle(
     user_input: &str,
@@ -21,7 +23,7 @@ pub async fn handle(
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
     configuration: &Arc<Configuration>,
-) -> Result<OutputAccumulater, Box<dyn Error>> {
+) -> Result<OutputAccumulater, UserInputHandlerError> {
     let command = command::get_main_command();
     let input = user_input.split_whitespace();
     let mut output_accumulator = OutputAccumulater::new();
@@ -35,8 +37,12 @@ pub async fn handle(
 
     let (action_type, sub_matches) = matches
         .subcommand()
-        .ok_or(Box::from("subcommand wasn't present at runtime") as Box<dyn Error>)
-        .and_then(|(s, sub_matches)| ActionType::parse(s).map(|s| (s, sub_matches)))?;
+        .ok_or(UserInputHandlerError::NoSubcommand)
+        .and_then(|(s, sub_matches)| {
+            ActionType::parse(s)
+                .map(|s| (s, sub_matches))
+                .map_err(UserInputHandlerError::ParseError)
+        })?;
 
     match action_type {
         ActionType::Create => {
@@ -87,8 +93,9 @@ async fn handle_create(
     glue: &ArcGlue,
     id_manager: &mut u16,
     output_accumulator: &mut OutputAccumulater,
-) -> HandleResult {
-    let notification = get_new_notification(matches, id_manager, Utc::now())?;
+) -> HandleUserInputResult {
+    let notification = get_new_notification(matches, id_manager, Utc::now())
+        .map_err(UserInputHandlerError::NotificationError)?;
 
     match notification {
         Some(notification) => {
@@ -128,7 +135,7 @@ async fn handle_queue(
     glue: &ArcGlue,
     id_manager: &mut u16,
     output_accumulator: &mut OutputAccumulater,
-) -> HandleResult {
+) -> HandleUserInputResult {
     let created_at = match db::read_last_expired_notification(glue.clone()).await {
         Some(n) => {
             debug!("last_expired_notification: {:?}", &n);
@@ -139,7 +146,8 @@ async fn handle_queue(
         None => Utc::now(),
     };
 
-    let notification = get_new_notification(matches, id_manager, created_at)?;
+    let notification = get_new_notification(matches, id_manager, created_at)
+        .map_err(UserInputHandlerError::NotificationError)?;
     match notification {
         Some(notification) => {
             let id = notification.get_id();
@@ -170,10 +178,11 @@ async fn handle_delete(
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
     output_accumulator: &mut OutputAccumulater,
-) -> HandleResult {
+) -> HandleUserInputResult {
     if sub_matches.is_present("id") {
         // delete one
-        let id = util::parse_arg::<u16>(sub_matches, "id")?;
+        let id =
+            util::parse_arg::<u16>(sub_matches, "id").map_err(UserInputHandlerError::ParseError)?;
         debug!("Message::Delete called! {}", id);
 
         match delete_notification(id, notification_task_map.clone(), glue.clone()).await {
@@ -209,9 +218,11 @@ async fn handle_delete(
 async fn handle_test(
     configuration: &Arc<Configuration>,
     output_accumulator: &mut OutputAccumulater,
-) -> HandleResult {
+) -> HandleUserInputResult {
     debug!("Message:NotificationTest called!");
-    let report = notify_work(&configuration.clone()).await?;
+    let report = notify_work(&configuration.clone())
+        .await
+        .map_err(UserInputHandlerError::NotificationError)?;
     output_accumulator.push(OutputType::Info, format!("\n{}", report));
 
     debug!("Message:NotificationTest done");
@@ -223,7 +234,10 @@ async fn handle_test(
     Ok(())
 }
 
-async fn handle_list(glue: &ArcGlue, output_accumulator: &mut OutputAccumulater) -> HandleResult {
+async fn handle_list(
+    glue: &ArcGlue,
+    output_accumulator: &mut OutputAccumulater,
+) -> HandleUserInputResult {
     debug!("Message::List called!");
     let notifications = db::list_notification(glue.clone()).await;
     debug!("Message::List done");
@@ -242,7 +256,7 @@ async fn handle_list(glue: &ArcGlue, output_accumulator: &mut OutputAccumulater)
 async fn handle_history(
     glue: &ArcGlue,
     output_accumulator: &mut OutputAccumulater,
-) -> HandleResult {
+) -> HandleUserInputResult {
     debug!("Message:History called!");
     let archived_notifications = db::list_archived_notification(glue.clone()).await;
     debug!("Message:History done!");
@@ -257,11 +271,12 @@ async fn handle_history(
     Ok(())
 }
 
+// get_matches extract ArgMatches from input string
 fn get_matches(
     command: Command,
     input: SplitWhitespace,
     output_accumulator: &mut OutputAccumulater,
-) -> Result<Option<ArgMatches>, Box<dyn Error>> {
+) -> Result<Option<ArgMatches>, UserInputHandlerError> {
     match command.try_get_matches_from(input) {
         Ok(args) => Ok(Some(args)),
         Err(err) => {
@@ -283,7 +298,7 @@ fn get_matches(
                 }
             }
 
-            Err(Box::new(err))
+            Err(UserInputHandlerError::CommandMatchError(err))
         }
     }
 }
