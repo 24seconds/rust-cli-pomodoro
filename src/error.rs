@@ -6,9 +6,13 @@ use std::{error::Error, fmt, io, result};
 
 pub type NotifyResult = result::Result<(), NotificationError>;
 
+// TODO(young): Replace main error type to this
 enum PomodoroError {
     NotificationError,
     ConfigurationError,
+    UdsHandlerError,
+    UserInputHandlerError,
+    ParseError,
 }
 
 // notification error enum
@@ -20,6 +24,7 @@ pub enum NotificationError {
     Discord(RequestError),
     EmptyConfiguration,
     NewNotification(ParseError),
+    DeletionFail(String),
 }
 
 impl fmt::Display for NotificationError {
@@ -32,6 +37,7 @@ impl fmt::Display for NotificationError {
             NotificationError::NewNotification(e) => {
                 write!(f, "faield to get new notification: {}", e)
             }
+            NotificationError::DeletionFail(msg) => write!(f, "{}", msg),
         }
     }
 }
@@ -44,6 +50,7 @@ impl std::error::Error for NotificationError {
             NotificationError::Discord(ref e) => Some(e),
             NotificationError::EmptyConfiguration => None,
             NotificationError::NewNotification(ref e) => Some(e),
+            NotificationError::DeletionFail(_) => None,
         }
     }
 }
@@ -55,6 +62,7 @@ pub enum ConfigurationError {
     JsonError(SerdeJsonError),
     SlackConfigNotFound,
     DiscordConfigNotFound,
+    LoadFail(io::Error),
     // config json wrong format?
 }
 
@@ -70,6 +78,7 @@ impl fmt::Display for ConfigurationError {
             ConfigurationError::DiscordConfigNotFound => {
                 write!(f, "can not find discord config in json")
             }
+            ConfigurationError::LoadFail(e) => write!(f, "failed to load: {}", e),
         }
     }
 }
@@ -82,6 +91,7 @@ impl std::error::Error for ConfigurationError {
             ConfigurationError::JsonError(ref e) => Some(e),
             ConfigurationError::SlackConfigNotFound => None,
             ConfigurationError::DiscordConfigNotFound => None,
+            ConfigurationError::LoadFail(ref e) => Some(e),
         }
     }
 }

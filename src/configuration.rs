@@ -55,7 +55,7 @@ impl Configuration {
     }
 }
 
-pub fn get_configuration(matches: &ArgMatches) -> Result<Arc<Configuration>, Box<dyn Error>> {
+pub fn get_configuration(matches: &ArgMatches) -> Result<Arc<Configuration>, ConfigurationError> {
     let credential_file_path = matches.value_of("config");
 
     let (configuration, config_error) = load_configuration(credential_file_path)?;
@@ -67,10 +67,12 @@ pub fn get_configuration(matches: &ArgMatches) -> Result<Arc<Configuration>, Box
 
 pub fn load_configuration(
     credential_file: Option<&str>,
-) -> Result<(Configuration, Option<ConfigurationError>), Box<dyn Error>> {
+) -> Result<(Configuration, Option<ConfigurationError>), ConfigurationError> {
     let (configuration, error) = match credential_file {
         Some(f) => {
-            let path = env::current_dir()?.join(f);
+            let path = env::current_dir()
+                .map_err(ConfigurationError::LoadFail)?
+                .join(f);
 
             match get_configuration_from_file(path) {
                 Ok(config) => (config, None),

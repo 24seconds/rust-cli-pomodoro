@@ -7,7 +7,6 @@ pub use notify::*;
 use chrono::{prelude::*, Duration};
 use clap::ArgMatches;
 use gluesql::core::data::Value;
-use std::error::Error;
 use tabled::Tabled;
 
 use crate::db;
@@ -261,14 +260,13 @@ pub async fn delete_notification(
     id: u16,
     notification_task_map: ArcTaskMap,
     glue: ArcGlue,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), NotificationError> {
     let notification = db::read_notification(glue.clone(), id).await;
     if notification.is_none() {
-        return Err(format!(
+        return Err(NotificationError::DeletionFail(format!(
             "deleting id ({}) failed. Corresponding notification does not exist",
             id
-        )
-        .into());
+        )));
     }
 
     {
@@ -276,12 +274,14 @@ pub async fn delete_notification(
 
         hash_map
             .get(&id)
-            .ok_or(format!("failed to corresponding task (id: {})", &id))?
+            .ok_or(format!("failed to corresponding task (id: {})", &id))
+            .map_err(NotificationError::DeletionFail)?
             .abort();
 
         hash_map
             .remove(&id)
-            .ok_or(format!("failed to remove id ({})", id))?;
+            .ok_or(format!("failed to remove id ({})", id))
+            .map_err(NotificationError::DeletionFail)?;
     }
 
     db::delete_and_archive_notification(glue, id).await;

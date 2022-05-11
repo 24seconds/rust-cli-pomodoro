@@ -119,7 +119,7 @@ impl MessageResponse {
 }
 
 // TODO(young): handle error type precisely instead of using dyn Error
-pub fn create_server_uds() -> Result<UnixDatagram, Box<dyn Error>> {
+pub fn create_server_uds() -> Result<UnixDatagram, std::io::Error> {
     // TODO(young): handle create_uds_address error
     let server_addr = create_uds_address(UdsType::Server, true)?;
     let socket = UnixDatagram::bind(server_addr)?;
@@ -130,7 +130,7 @@ pub fn create_server_uds() -> Result<UnixDatagram, Box<dyn Error>> {
 
 // TODO(young): handle unixdatagram error
 // TODO(young): handle create_uds_address error
-pub async fn create_client_uds() -> Result<UnixDatagram, Box<dyn Error>> {
+pub async fn create_client_uds() -> Result<UnixDatagram, std::io::Error> {
     let server_addr = create_uds_address(UdsType::Server, false)?;
     let client_addr = create_uds_address(UdsType::Client, true)?;
 
