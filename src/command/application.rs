@@ -125,14 +125,47 @@ pub(crate) fn add_args_for_create_subcommand(command: Command<'_>) -> Command {
 
 #[cfg(test)]
 mod tests {
+    use std::iter::zip;
+
     use clap::{Arg, Command};
 
-    use super::{add_args_for_create_subcommand, get_config_command, get_main_command};
+    use crate::command::application::get_common_subcommands;
+
+    use super::{
+        add_args_for_create_subcommand, get_main_command, get_start_and_uds_client_command, AUTHOR,
+        BINARY_NAME,
+    };
 
     #[test]
-    fn test_get_command() {
+    fn test_get_start_and_uds_client_command() {
+        let command = get_start_and_uds_client_command();
+
+        assert_eq!(command.get_name(), BINARY_NAME);
+        assert_eq!(command.get_author().unwrap(), AUTHOR);
+
+        let args: Vec<&Arg> = command
+            .get_arguments()
+            .filter(|arg| arg.get_id() == "config")
+            .collect();
+        assert_eq!(args.len(), 1);
+
+        let subcommands = command.get_subcommands().collect::<Vec<&Command>>();
+        let common_subcommand = get_common_subcommands();
+
+        zip(subcommands, common_subcommand)
+            .for_each(|(actual, expected)| assert_eq!(actual, &expected));
+    }
+
+    #[test]
+    fn test_get_main_command() {
         let app = get_main_command();
         assert_eq!(app.get_name(), "pomodoro");
+    }
+
+    #[test]
+    fn test_get_common_subcommands() {
+        let subcommands = get_common_subcommands();
+        assert!(subcommands.len() == 6);
     }
 
     #[test]
@@ -153,13 +186,5 @@ mod tests {
             add_args_for_create_subcommand(cmd).get_matches_from("myapp -d".split_whitespace());
 
         assert!(matches.is_present("default"));
-    }
-
-    #[test]
-    fn test_config_command() {
-        let cmd =
-            get_config_command().get_matches_from("pomodoro -c credential.json".split_whitespace());
-        let config = cmd.value_of("config").unwrap();
-        assert_eq!(config, "credential.json");
     }
 }

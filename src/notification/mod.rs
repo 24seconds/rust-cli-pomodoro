@@ -291,9 +291,13 @@ pub async fn delete_notification(
 #[cfg(test)]
 mod tests {
     use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+    use clap::Command;
     use gluesql::core::data::Value;
     use tabled::Tabled;
 
+    use crate::command::add_args_for_create_subcommand;
+
+    use super::get_new_notification;
     use super::Notification;
 
     #[test]
@@ -384,25 +388,6 @@ mod tests {
             ],
             headers
         );
-    }
-}
-
-#[cfg(test)]
-mod tests2 {
-    use chrono::Utc;
-    use clap::Command;
-
-    use crate::command::add_args_for_create_subcommand;
-
-    use super::{get_new_notification, read_input};
-
-    #[test]
-    fn test_read_command() {
-        let mut input = &b"list"[..];
-        let mut output = Vec::new();
-
-        let command = read_input(&mut output, &mut input);
-        assert_eq!("list", command);
     }
 
     #[test]

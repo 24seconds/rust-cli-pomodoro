@@ -66,7 +66,7 @@ where
 mod tests {
     use clap::{Arg, Command};
 
-    use super::parse_arg;
+    use super::{parse_arg, read_input};
 
     fn test_parse_arg() {
         let m = Command::new("myapp")
@@ -89,5 +89,12 @@ mod tests {
             .unwrap()
             .to_string()
             .contains("failed to parse arg"));
+    }
+
+    #[test]
+    fn test_read_command() {
+        let mut input = &b"list"[..];
+        let command = read_input(&mut input);
+        assert_eq!("list", command);
     }
 }
