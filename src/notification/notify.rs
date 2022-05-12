@@ -1,10 +1,7 @@
-use colored::{ColoredString, Colorize};
 #[cfg(target_os = "linux")]
 use notify_rust::Hint;
 use notify_rust::{Notification as NR_Notification, Timeout as NR_Timeout};
 use serde_json::json;
-use std::error::Error;
-use tabled::{Style, Table, Tabled};
 use tokio::join;
 
 #[cfg(target_os = "macos")]
@@ -13,6 +10,7 @@ use std::sync::Arc;
 
 use crate::configuration::{Configuration, SLACK_API_URL};
 use crate::error::{NotificationError, NotifyResult};
+use crate::report;
 
 #[cfg(target_os = "macos")]
 fn notify_terminal_notifier(message: &'static str) {
@@ -127,9 +125,9 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<String, N
 
     let (desktop_result, slack_result, discord_result) = join!(desktop_fut, slack_fut, discord_fut);
 
-    Ok(generate_notify_report(
-        desktop_result,
+    Ok(report::generate_notify_report(
         slack_result,
+        desktop_result,
         discord_result,
     ))
 }
@@ -147,62 +145,9 @@ pub async fn notify_break(configuration: &Arc<Configuration>) -> Result<String, 
 
     let (desktop_result, slack_result, discord_result) = join!(desktop_fut, slack_fut, discord_fut);
 
-    Ok(generate_notify_report(
+    Ok(report::generate_notify_report(
         desktop_result,
         slack_result,
         discord_result,
     ))
-}
-
-#[derive(Tabled)]
-struct Report {
-    ok: ColoredString,
-    notification_type: String,
-    reason: String,
-}
-
-impl Report {
-    pub fn new(ok: &'static str, notification_type: &'static str) -> Self {
-        Report {
-            ok: ok.green(),
-            notification_type: String::from(notification_type),
-            reason: String::default(),
-        }
-    }
-
-    pub fn update_reason(mut self, e: NotificationError) -> Self {
-        let mut vec = vec![format!("{}", e)];
-        if let Some(s) = e.source() {
-            vec.push(s.to_string());
-        }
-
-        self.reason = vec.join("\n");
-
-        self
-    }
-}
-
-fn generate_notify_report(
-    desktop: NotifyResult,
-    slack: NotifyResult,
-    discord: NotifyResult,
-) -> String {
-    let desktop_message = match desktop {
-        Ok(_) => Report::new("O", "Desktop"),
-        Err(e) => Report::new("X", "Desktop").update_reason(e),
-    };
-
-    let slack_message = match slack {
-        Ok(_) => Report::new("O", "Slack"),
-        Err(e) => Report::new("X", "Slack").update_reason(e),
-    };
-
-    let discord_message = match discord {
-        Ok(_) => Report::new("O", "Discord"),
-        Err(e) => Report::new("X", "Discord").update_reason(e),
-    };
-
-    Table::new(vec![desktop_message, slack_message, discord_message])
-        .with(Style::modern())
-        .to_string()
 }
