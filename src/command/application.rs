@@ -30,7 +30,7 @@ pub fn get_start_and_uds_client_command() -> Command<'static> {
     Command::new(BINARY_NAME)
         .version(env!("CARGO_PKG_VERSION"))
         .author(AUTHOR)
-        .about("uds client command")
+        .about("start up application with config or run command using uds client")
         .args_conflicts_with_subcommands(true)
         .arg(
             Arg::new("config")
