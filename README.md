@@ -147,19 +147,19 @@ pomodoro --config ./credential.json
 
 - [ ] Run previous command if needed
 - [ ] Command auto completion
-- [o] Write test cases 
+- [ ] Write integration tests
 - [ ] More rich notification: sound, app icon, hint, action etc
-- [o] Provide more notification delivery option: Currently pomodoro uses desktop notification. But notification could be delivered through slack, email or any kind of method.
-    - [v] slack integration
-    - [v] discord integration
+- [ ] Provide more notification delivery option: Currently pomodoro uses desktop notification. But notification could be delivered through slack, email or any kind of method.
+    - [x] slack integration
+    - [x] discord integration
     - what else?
-- [o] Provide an easy way to use this app (brew, snap, cargo install, etc..)
-    - [v] cargo install
+- [ ] Provide an easy way to use this app (brew, snap, cargo install, etc..)
+    - [x] cargo install
 
 
 ------
 
-- [v] Support mac os (>= 11.0.0) notification: Currently [notify-rust](https://github.com/hoodie/notify-rust) uses [mac-notification-sys](https://github.com/h4llow3En/mac-notification-sys) but `mac-notification_sys` doesn't support recent mac version (as of 17:10 Sun 17 Oct 2021) => published binary can send desktop notification without problem (01:21 Fri 13 May 2022)
+- [x] Support mac os (>= 11.0.0) notification: Currently [notify-rust](https://github.com/hoodie/notify-rust) uses [mac-notification-sys](https://github.com/h4llow3En/mac-notification-sys) but `mac-notification_sys` doesn't support recent mac version (as of 17:10 Sun 17 Oct 2021) => published binary can send desktop notification without problem (01:21 Fri 13 May 2022)
 
 
 ## Compatibility
