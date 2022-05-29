@@ -1,3 +1,4 @@
+use crate::ipc::{Bincodec, UdsMessage};
 use clap::ArgMatches;
 use std::result;
 use tokio::net::UnixDatagram;
@@ -7,7 +8,7 @@ use crate::command::util;
 use crate::error::UdsHandlerError;
 use crate::ipc::{MessageRequest, MessageResponse};
 
-const BUFFER_LENGTH: usize = 1_000_000;
+pub const BUFFER_LENGTH: usize = 1_000_000;
 
 type HandleUdsResult = result::Result<(), UdsHandlerError>;
 
@@ -43,10 +44,10 @@ async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> Handle
 
     socket
         .send(
-            MessageRequest::Create {
+            UdsMessage::Public(MessageRequest::Create {
                 work: work_time,
                 r#break: break_time,
-            }
+            })
             .encode()
             .map_err(UdsHandlerError::EncodeFailed)?
             .as_slice(),
@@ -63,12 +64,13 @@ async fn handle_queue(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleU
     let (work_time, break_time) =
         util::parse_work_and_break_time(sub_matches).map_err(UdsHandlerError::ParseError)?;
 
+    debug!("handle_queue");
     socket
         .send(
-            MessageRequest::Queue {
+            UdsMessage::Public(MessageRequest::Queue {
                 work: work_time,
                 r#break: break_time,
-            }
+            })
             .encode()
             .map_err(UdsHandlerError::EncodeFailed)?
             .as_slice(),
@@ -93,7 +95,7 @@ async fn handle_delete(socket: UnixDatagram, sub_matches: &ArgMatches) -> Handle
 
     socket
         .send(
-            MessageRequest::Delete { id, all }
+            UdsMessage::Public(MessageRequest::Delete { id, all })
                 .encode()
                 .map_err(UdsHandlerError::EncodeFailed)?
                 .as_slice(),
@@ -109,7 +111,7 @@ async fn handle_delete(socket: UnixDatagram, sub_matches: &ArgMatches) -> Handle
 async fn handle_list(socket: UnixDatagram) -> HandleUdsResult {
     socket
         .send(
-            MessageRequest::List
+            UdsMessage::Public(MessageRequest::List)
                 .encode()
                 .map_err(UdsHandlerError::EncodeFailed)?
                 .as_slice(),
@@ -125,7 +127,7 @@ async fn handle_list(socket: UnixDatagram) -> HandleUdsResult {
 async fn handle_test(socket: UnixDatagram) -> HandleUdsResult {
     socket
         .send(
-            MessageRequest::Test
+            UdsMessage::Public(MessageRequest::Test)
                 .encode()
                 .map_err(UdsHandlerError::EncodeFailed)?
                 .as_slice(),
@@ -141,7 +143,7 @@ async fn handle_test(socket: UnixDatagram) -> HandleUdsResult {
 async fn handle_history(socket: UnixDatagram) -> HandleUdsResult {
     socket
         .send(
-            MessageRequest::History
+            UdsMessage::Public(MessageRequest::History)
                 .encode()
                 .map_err(UdsHandlerError::EncodeFailed)?
                 .as_slice(),
