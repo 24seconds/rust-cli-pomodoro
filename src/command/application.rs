@@ -80,7 +80,8 @@ fn get_common_subcommands() -> Vec<Command<'static>> {
                     .help("The ID of notification to delete")
                     .takes_value(true)
                     .conflicts_with("all")
-                    .short('i'),
+                    .short('i')
+                    .long("id"),
             )
             .arg(
                 Arg::new("all")
