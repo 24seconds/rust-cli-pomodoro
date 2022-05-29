@@ -21,15 +21,18 @@ mod ipc;
 mod logging;
 mod report;
 
-use crate::configuration::{get_configuration, Configuration};
 use crate::error::ConfigurationError;
-use crate::ipc::{create_client_uds, create_server_uds, MessageRequest, MessageResponse};
+use crate::ipc::{create_client_uds, create_server_uds, Bincodec, MessageRequest, MessageResponse};
 use crate::notification::archived_notification;
 use crate::notification::notify::{notify_break, notify_work};
 use crate::notification::Notification;
 use crate::{
     command::{handler, util, CommandType},
     ipc::{get_uds_address, UdsType},
+};
+use crate::{
+    configuration::{get_configuration, Configuration},
+    ipc::UdsMessage,
 };
 
 #[macro_use]
@@ -76,13 +79,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             // handle uds
             let uds_input_tx = user_input_tx.clone();
-            let server_uds = Arc::new(create_server_uds().unwrap());
-            let server_rx = server_uds.clone();
 
-            // TODO(young): handle tokio::spawn return value nicely so that we can use `?` inside
-            let uds_input_handle = spawn_uds_input_handler(uds_input_tx, server_rx);
+            let server_uds_option = create_server_uds().await.unwrap();
+            let server_tx = match server_uds_option {
+                Some(uds) => {
+                    let server_uds = Arc::new(uds);
+                    let (server_rx, server_tx) = (server_uds.clone(), server_uds.clone());
+                    let uds_input_handle =
+                        spawn_uds_input_handler(uds_input_tx, server_tx, server_rx);
 
-            let server_tx = server_uds.clone();
+                    Some(server_uds)
+                }
+                None => None,
+            };
+
             // TODO(young) handle `rx.recv().await` returns None case
             // TODO(young): handle tokio::spawn return value nicely so that we can use `?` inside
             while let Some(user_input) = user_input_rx.recv().await {
@@ -97,15 +107,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     Ok(mut output) => match user_input.source {
                         InputSource::StandardInput => {}
                         InputSource::UnixDomainSocket => {
-                            let client_addr = get_uds_address(UdsType::Client);
-                            ipc::send_to(
-                                &server_tx,
-                                client_addr,
-                                MessageResponse::new(output.take_body())
-                                    .encode()?
-                                    .as_slice(),
-                            )
-                            .await;
+                            if let Some(ref server_tx) = server_tx {
+                                let client_addr = get_uds_address(UdsType::Client);
+                                ipc::send_to(
+                                    server_tx,
+                                    client_addr,
+                                    MessageResponse::new(output.take_body())
+                                        .encode()?
+                                        .as_slice(),
+                                )
+                                .await;
+                            }
                         }
                     },
                     Err(e) => {
@@ -114,18 +126,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         match user_input.source {
                             InputSource::StandardInput => {}
                             InputSource::UnixDomainSocket => {
-                                let client_addr = get_uds_address(UdsType::Client);
-                                ipc::send_to(
-                                    &server_tx,
-                                    client_addr,
-                                    MessageResponse::new(vec![format!(
-                                        "There was an error analyzing the input: {}",
-                                        e
-                                    )])
-                                    .encode()?
-                                    .as_slice(),
-                                )
-                                .await;
+                                if let Some(ref server_tx) = server_tx {
+                                    let client_addr = get_uds_address(UdsType::Client);
+                                    ipc::send_to(
+                                        server_tx,
+                                        client_addr,
+                                        MessageResponse::new(vec![format!(
+                                            "There was an error analyzing the input: {}",
+                                            e
+                                        )])
+                                        .encode()?
+                                        .as_slice(),
+                                    )
+                                    .await;
+                                }
                             }
                         }
                     }
@@ -241,6 +255,7 @@ fn spawn_stdinput_handler(tx: Sender<UserInput>) -> JoinHandle<()> {
 
 fn spawn_uds_input_handler(
     uds_tx: Sender<UserInput>,
+    server_tx: Arc<UnixDatagram>,
     server_rx: Arc<UnixDatagram>,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
@@ -262,11 +277,29 @@ fn spawn_uds_input_handler(
                 }
             }
 
-            let user_input: UserInput =
-                MessageRequest::into(MessageRequest::decode(&buf[..size]).unwrap());
-            debug!("user_input: {:?}", user_input);
+            let uds_message = UdsMessage::decode(&buf[..size]).unwrap();
+            match uds_message {
+                UdsMessage::Public(message) => {
+                    let user_input: UserInput = MessageRequest::into(message);
+                    debug!("user_input: {:?}", user_input);
 
-            let _ = uds_tx.send(user_input).await.unwrap();
+                    let _ = uds_tx.send(user_input).await.unwrap();
+                }
+                UdsMessage::Internal(message) => {
+                    debug!("internal_message ok, {:?}", message);
+                    match message {
+                        ipc::internal::Message::Ping => {
+                            ipc::send_to(
+                                &server_tx,
+                                addr.as_pathname().unwrap().to_path_buf(),
+                                ipc::internal::Message::Pong.encode().unwrap().as_slice(),
+                            )
+                            .await;
+                        }
+                        ipc::internal::Message::Pong => {}
+                    }
+                }
+            }
         }
     })
 }

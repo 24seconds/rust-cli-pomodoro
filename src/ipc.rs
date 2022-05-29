@@ -1,9 +1,13 @@
 use bincode::error::DecodeError;
 use bincode::error::EncodeError;
+use bincode::Decode;
+use bincode::Encode;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use std::time::Duration;
 use tokio::net::UnixDatagram;
+use tokio::time::timeout;
 
 use crate::command::action::ActionType;
 use crate::InputSource;
@@ -20,6 +24,40 @@ pub enum UdsType {
 }
 
 #[derive(bincode::Encode, bincode::Decode, PartialEq, Debug, Eq)]
+pub enum UdsMessage {
+    Public(MessageRequest),
+    Internal(internal::Message),
+}
+
+impl Bincodec for UdsMessage {
+    type Message = Self;
+}
+
+pub trait Bincodec {
+    type Message;
+
+    fn encode(self) -> Result<Vec<u8>, EncodeError>
+    where
+        Self: Sized,
+        Self: Encode,
+    {
+        let vec = bincode::encode_to_vec(self, bincode::config::standard())?;
+
+        Ok(vec)
+    }
+
+    fn decode(byte: &[u8]) -> Result<Self::Message, DecodeError>
+    where
+        <Self as Bincodec>::Message: Decode,
+    {
+        let (message, _): (Self::Message, usize) =
+            bincode::decode_from_slice(byte, bincode::config::standard())?;
+
+        Ok(message)
+    }
+}
+
+#[derive(bincode::Encode, bincode::Decode, PartialEq, Debug, Eq)]
 pub enum MessageRequest {
     Create { work: u16, r#break: u16 },
     Queue { work: u16, r#break: u16 },
@@ -29,19 +67,8 @@ pub enum MessageRequest {
     History,
 }
 
-impl MessageRequest {
-    pub fn encode(self) -> Result<Vec<u8>, EncodeError> {
-        let vec = bincode::encode_to_vec(self, bincode::config::standard())?;
-
-        Ok(vec)
-    }
-
-    pub fn decode(byte: &[u8]) -> Result<Self, DecodeError> {
-        let (request, _): (MessageRequest, usize) =
-            bincode::decode_from_slice(byte, bincode::config::standard())?;
-
-        Ok(request)
-    }
+impl Bincodec for MessageRequest {
+    type Message = Self;
 }
 
 impl From<MessageRequest> for UserInput {
@@ -96,31 +123,92 @@ impl MessageResponse {
         &self.body
     }
 
-    pub fn encode(self) -> Result<Vec<u8>, EncodeError> {
-        let vec = bincode::encode_to_vec(self, bincode::config::standard())?;
-
-        Ok(vec)
-    }
-
-    pub fn decode(byte: &[u8]) -> Result<Self, DecodeError> {
-        let (response, _): (MessageResponse, usize) =
-            bincode::decode_from_slice(byte, bincode::config::standard())?;
-
-        Ok(response)
-    }
-
     pub fn print(self) {
         self.get_body().iter().for_each(|m| println!("{}", m));
     }
 }
 
-pub fn create_server_uds() -> Result<UnixDatagram, std::io::Error> {
+impl Bincodec for MessageResponse {
+    type Message = Self;
+}
+
+pub mod internal {
+    use bincode;
+    use bincode::error::{DecodeError, EncodeError};
+    use tokio::net::UnixDatagram;
+
+    use crate::command::handler::uds_client::BUFFER_LENGTH;
+
+    #[derive(bincode::Encode, bincode::Decode, PartialEq, Debug, Eq)]
+    pub enum Message {
+        Ping,
+        Pong,
+    }
+
+    impl Message {
+        pub fn encode(self) -> Result<Vec<u8>, EncodeError> {
+            let vec = bincode::encode_to_vec(self, bincode::config::standard())?;
+
+            Ok(vec)
+        }
+
+        pub fn decode(byte: &[u8]) -> Result<Self, DecodeError> {
+            let (msg, _): (Message, usize) =
+                bincode::decode_from_slice(byte, bincode::config::standard())?;
+
+            Ok(msg)
+        }
+    }
+
+    pub async fn decode_from_socket(
+        socket: UnixDatagram,
+    ) -> Result<Message, Box<dyn std::error::Error>> {
+        let mut vec = Vec::new();
+        let mut total_size = 0;
+
+        loop {
+            let mut buf = vec![0u8; BUFFER_LENGTH];
+            let (size, _) = socket.recv_from(&mut buf).await?;
+
+            let dgram = &buf[..size];
+            debug!("dgram len: {:?}", dgram.len());
+            vec.extend_from_slice(dgram);
+            debug!("vec length: {:?}", vec.len());
+
+            total_size += size;
+
+            if size == 0 {
+                break;
+            }
+        }
+
+        debug!("total_size: {}", total_size);
+        let dgram = &vec.as_slice()[..total_size];
+
+        let message = Message::decode(dgram)?;
+
+        Ok(message)
+    }
+}
+
+// TODO(young): The result should be optional
+pub async fn create_server_uds() -> Result<Option<UnixDatagram>, std::io::Error> {
+    debug!("create_server_uds called");
+    let result = detect_address_in_use().await;
+    debug!("result: {:?}", result);
+    if let Ok(address_in_use) = result {
+        if address_in_use {
+            debug!("address_in_use");
+            return Ok(None);
+        }
+    }
+
     // TODO(young): handle create_uds_address error
     let server_addr = create_uds_address(UdsType::Server, true)?;
     let socket = UnixDatagram::bind(server_addr)?;
 
     debug!("create_server_uds called");
-    Ok(socket)
+    Ok(Some(socket))
 }
 
 pub async fn create_client_uds() -> Result<UnixDatagram, std::io::Error> {
@@ -132,6 +220,48 @@ pub async fn create_client_uds() -> Result<UnixDatagram, std::io::Error> {
 
     debug!("create_client_uds called");
     Ok(socket)
+}
+
+async fn detect_address_in_use() -> Result<bool, std::io::Error> {
+    debug!("detect_address_in_use called");
+    let socket = create_client_uds().await?;
+
+    // TODO(young): Force `send` must get UdsMessage type
+    let timeout_result = timeout(
+        Duration::from_millis(500),
+        socket.send(
+            UdsMessage::Internal(internal::Message::Ping)
+                .encode()
+                .unwrap()
+                .as_slice(),
+        ),
+    )
+    .await;
+    if let Err(err) = timeout_result {
+        debug!("did not send value within 500 ms, {:?}", err);
+    }
+
+    let timeout_result = timeout(
+        Duration::from_millis(500),
+        internal::decode_from_socket(socket),
+    )
+    .await;
+    match timeout_result {
+        Ok(message_result) => {
+            debug!("message_result: {:?}", message_result);
+            if let Ok(msg) = message_result {
+                if msg == internal::Message::Pong {
+                    return Ok(true);
+                }
+            }
+        }
+        Err(err) => {
+            debug!("did not receive value within 500 ms, {:?}", err);
+            return Ok(false);
+        }
+    }
+
+    Ok(false)
 }
 
 fn create_uds_address(r#type: UdsType, should_remove: bool) -> std::io::Result<PathBuf> {
