@@ -67,7 +67,7 @@ impl From<MessageRequest> for UserInput {
                 if all {
                     format!("{} -a", String::from(ActionType::Delete))
                 } else {
-                    format!("{} -id {}", String::from(ActionType::Delete), id)
+                    format!("{} -i {}", String::from(ActionType::Delete), id)
                 }
             }
             MessageRequest::List => String::from(ActionType::List),
