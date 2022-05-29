@@ -86,7 +86,8 @@ fn get_common_subcommands() -> Vec<Command<'static>> {
             .arg(
                 Arg::new("all")
                     .help("The flag to delete all notifications")
-                    .short('a'),
+                    .short('a')
+                    .long("all"),
             ),
         Command::new(ActionType::List)
             .alias(LS)
