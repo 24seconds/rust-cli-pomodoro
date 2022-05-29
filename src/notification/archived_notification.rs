@@ -3,7 +3,6 @@ use tabled::Tabled;
 
 use crate::notification::Notification;
 
-#[derive(Debug)]
 pub struct ArchivedNotification {
     id: u16,
     description: String,

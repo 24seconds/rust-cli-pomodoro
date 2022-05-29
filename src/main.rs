@@ -110,7 +110,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             if let Some(ref server_tx) = server_tx {
                                 let client_addr = get_uds_address(UdsType::Client);
                                 ipc::send_to(
-                                    &server_tx,
+                                    server_tx,
                                     client_addr,
                                     MessageResponse::new(output.take_body())
                                         .encode()?
@@ -129,7 +129,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 if let Some(ref server_tx) = server_tx {
                                     let client_addr = get_uds_address(UdsType::Client);
                                     ipc::send_to(
-                                        &server_tx,
+                                        server_tx,
                                         client_addr,
                                         MessageResponse::new(vec![format!(
                                             "There was an error analyzing the input: {}",
