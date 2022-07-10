@@ -21,7 +21,7 @@ exclude = ["/assets"]
 tokio = { version = "1.18.1", features = ["macros", "rt-multi-thread", "time", "sync"] }
 clap = "3.1.10"
 chrono = "0.4.19"
-chrono-tz=  "0.6.0"
+chrono-tz=  "0.6.1"
 gluesql = { version = "0.10.2", default-features = false, features = ["memory-storage"] }
 notify-rust = "4.5.4"
 log = "0.4.0"
