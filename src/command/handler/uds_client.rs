@@ -8,7 +8,7 @@ use crate::command::util;
 use crate::error::UdsHandlerError;
 use crate::ipc::{MessageRequest, MessageResponse};
 
-pub const BUFFER_LENGTH: usize = 1_000_000;
+pub const BUFFER_LENGTH: usize = 100_000_000;
 
 type HandleUdsResult = result::Result<(), UdsHandlerError>;
 
