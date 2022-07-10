@@ -18,7 +18,7 @@ exclude = ["/assets"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.18.1", features = ["macros", "rt-multi-thread", "time", "sync"] }
+tokio = { version = "1.19.2", features = ["macros", "rt-multi-thread", "time", "sync"] }
 clap = "3.1.10"
 chrono = "0.4.19"
 chrono-tz=  "0.6.1"
