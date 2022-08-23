@@ -22,7 +22,7 @@ tokio = { version = "1.19.2", features = ["macros", "rt-multi-thread", "time", "
 clap = "3.2.16"
 chrono = "0.4.22"
 chrono-tz=  "0.6.3"
-gluesql = { version = "0.11.0", default-features = false, features = ["memory-storage"] }
+gluesql = { version = "0.12.0", default-features = false, features = ["memory-storage"] }
 notify-rust = "4.5.8"
 log = "0.4.17"
 env_logger = "0.9.0"
