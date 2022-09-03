@@ -19,7 +19,7 @@ exclude = ["/assets"]
 
 [dependencies]
 tokio = { version = "1.19.2", features = ["macros", "rt-multi-thread", "time", "sync"] }
-clap = "3.2.16"
+clap = "3.2.18"
 chrono = "0.4.22"
 chrono-tz=  "0.6.3"
 gluesql = { version = "0.12.0", default-features = false, features = ["memory-storage"] }
