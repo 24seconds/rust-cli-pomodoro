@@ -1,20 +1,17 @@
 use chrono::SecondsFormat;
-use gluesql::{
-    memory_storage::Key,
-    prelude::{Glue, MemoryStorage, Payload},
-};
+use gluesql::prelude::{Glue, MemoryStorage, Payload};
 use std::sync::{Arc, Mutex};
 
 use crate::ArcGlue;
 use crate::{archived_notification::ArchivedNotification, notification::Notification};
 
-pub fn get_memory_glue() -> Glue<Key, MemoryStorage> {
+pub fn get_memory_glue() -> Glue<MemoryStorage> {
     let storage = MemoryStorage::default();
 
     Glue::new(storage)
 }
 
-pub async fn initialize(glue: Arc<Mutex<Glue<Key, MemoryStorage>>>) {
+pub async fn initialize(glue: Arc<Mutex<Glue<MemoryStorage>>>) {
     let mut glue = glue.lock().unwrap();
 
     let sqls = vec![
@@ -77,7 +74,7 @@ pub async fn read_last_expired_notification(glue: ArcGlue) -> Option<Notificatio
     );
     debug!("sql: {:?}", sql);
 
-    let output = glue.execute(sql.as_str()).unwrap();
+    let output = glue.execute(sql.as_str()).unwrap().swap_remove(0);
     debug!("output: {:?}", output);
 
     match output {
@@ -109,7 +106,7 @@ pub async fn read_notification(glue: ArcGlue, id: u16) -> Option<Notification> {
 
     debug!("sql: {:?}", sql);
 
-    let output = glue.execute(sql.as_str()).unwrap();
+    let output = glue.execute(sql.as_str()).unwrap().swap_remove(0);
     debug!("output: {:?}", output);
 
     match output {
@@ -134,7 +131,7 @@ pub async fn list_notification(glue: ArcGlue) -> Vec<Notification> {
 
     let sql = "SELECT * FROM notifications;";
 
-    let output = glue.execute(sql).unwrap();
+    let output = glue.execute(sql).unwrap().swap_remove(0);
     debug!("output: {:?}", output);
 
     match output {
@@ -153,7 +150,7 @@ pub async fn list_archived_notification(glue: ArcGlue) -> Vec<ArchivedNotificati
 
     let sql = "SELECT * FROM archived_notifications ORDER BY id DESC;";
 
-    let output = glue.execute(sql).unwrap();
+    let output = glue.execute(sql).unwrap().swap_remove(0);
     debug!("output: {:?}", output);
 
     match output {
@@ -277,7 +274,7 @@ mod tests {
         initialize(glue.clone()).await;
 
         let sql = "SHOW TABLES;";
-        let output = glue.lock().unwrap().execute(sql).unwrap();
+        let output = glue.lock().unwrap().execute(sql).unwrap().swap_remove(0);
 
         match output {
             Payload::ShowVariable(PayloadVariable::Tables(mut names)) => {
