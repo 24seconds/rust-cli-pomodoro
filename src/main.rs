@@ -1,8 +1,5 @@
 use chrono::Utc;
-use gluesql::{
-    memory_storage::Key,
-    prelude::{Glue, MemoryStorage},
-};
+use gluesql::prelude::{Glue, MemoryStorage};
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{self};
@@ -40,7 +37,7 @@ extern crate log;
 
 // key: notification id, value: spawned notification task
 pub type TaskMap = HashMap<u16, JoinHandle<()>>;
-pub type ArcGlue = Arc<Mutex<Glue<Key, MemoryStorage>>>;
+pub type ArcGlue = Arc<Mutex<Glue<MemoryStorage>>>;
 pub type ArcTaskMap = Arc<Mutex<TaskMap>>;
 
 #[derive(Debug)]
@@ -174,7 +171,7 @@ async fn detect_command_type() -> Result<CommandType, ConfigurationError> {
     Ok(command_type)
 }
 
-async fn initialize_db() -> Arc<Mutex<Glue<Key, MemoryStorage>>> {
+async fn initialize_db() -> Arc<Mutex<Glue<MemoryStorage>>> {
     let glue = Arc::new(Mutex::new(db::get_memory_glue()));
     db::initialize(glue.clone()).await;
 

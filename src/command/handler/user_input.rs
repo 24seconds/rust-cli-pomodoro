@@ -4,6 +4,9 @@ use std::process;
 use std::result;
 use std::str::SplitWhitespace;
 use std::sync::Arc;
+use tabled::object::Segment;
+use tabled::Alignment;
+use tabled::Modify;
 use tabled::{Style, TableIteratorExt};
 
 use crate::command::output::{OutputAccumulater, OutputType};
@@ -244,7 +247,12 @@ async fn handle_list(
 
     let table = notifications
         .table()
-        .with(Style::modern().horizontal_off())
+        .with(
+            Style::modern()
+                .off_horizontal()
+                .lines([(1, Style::modern().get_horizontal())]),
+        )
+        .with(Modify::new(Segment::all()).with(Alignment::center()))
         .to_string();
 
     output_accumulator.push(OutputType::Info, format!("\n{}", table));
@@ -263,7 +271,12 @@ async fn handle_history(
 
     let table = archived_notifications
         .table()
-        .with(Style::modern().horizontal_off())
+        .with(
+            Style::modern()
+                .off_horizontal()
+                .lines([(1, Style::modern().get_horizontal())]),
+        )
+        .with(Modify::new(Segment::all()).with(Alignment::center()))
         .to_string();
     output_accumulator.push(OutputType::Info, format!("\n{}", table));
     output_accumulator.push(OutputType::Println, String::from("History succeed"));
