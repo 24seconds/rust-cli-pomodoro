@@ -113,16 +113,14 @@ pub async fn read_last_expired_notification(glue: ArcGlue) -> Option<Notificatio
 pub async fn read_notification(glue: ArcGlue, id: u16) -> Option<Notification> {
     let mut glue = glue.lock().unwrap();
 
-    let sql = format!(
-        r#"
-        SELECT * FROM notifications WHERE id = {};
-        "#,
-        id
-    );
+    let sql_stmt = table("notifications")
+        .select()
+        .filter(format!("id = {}", id).as_str())
+        .build()
+        .unwrap();
+    debug!("sql_stmt: {:?}", sql_stmt);
 
-    debug!("sql: {:?}", sql);
-
-    let output = glue.execute(sql.as_str()).unwrap().swap_remove(0);
+    let output = glue.execute_stmt(&sql_stmt).unwrap();
     debug!("output: {:?}", output);
 
     match output {
@@ -145,9 +143,9 @@ pub async fn read_notification(glue: ArcGlue, id: u16) -> Option<Notification> {
 pub async fn list_notification(glue: ArcGlue) -> Vec<Notification> {
     let mut glue = glue.lock().unwrap();
 
-    let sql = "SELECT * FROM notifications;";
+    let sql_stmt = table("notifications").select().build().unwrap();
 
-    let output = glue.execute(sql).unwrap().swap_remove(0);
+    let output = glue.execute_stmt(&sql_stmt).unwrap();
     debug!("output: {:?}", output);
 
     match output {
@@ -192,28 +190,24 @@ pub async fn delete_notification(glue: ArcGlue, id: u16) {
     let mut glue = glue.lock().unwrap();
 
     // check if notification exists. It's okay. glue executes commands sequentially as of now.
-    let sql = format!(
-        r#"
-        SELECT * FROM notifications WHERE id = {};
-        "#,
-        id
-    );
+    let sql_stmt = table("notifications")
+        .select()
+        .filter(format!("id = {}", id).as_str())
+        .build()
+        .unwrap();
+    debug!("sql_stmt: {:?}", sql_stmt);
 
-    debug!("sql: {:?}", sql);
-
-    let output = glue.execute(sql.as_str()).unwrap();
+    let output = glue.execute_stmt(&sql_stmt).unwrap();
     debug!("output: {:?}", output);
 
-    let sql = format!(
-        r#"
-        DELETE FROM notifications WHERE id = {};
-        "#,
-        id
-    );
+    let sql_stmt = table("notifications")
+        .delete()
+        .filter(format!("id = {}", id).as_str())
+        .build()
+        .unwrap();
+    debug!("delete sql_stmt: {:?}", sql_stmt);
 
-    debug!("delete sql: {}", sql);
-
-    let output = glue.execute(sql.as_str()).unwrap();
+    let output = glue.execute_stmt(&sql_stmt).unwrap();
     debug!("output: {:?}", output);
 }
 
@@ -252,13 +246,10 @@ pub async fn archive_all_notification(glue: ArcGlue) {
 pub async fn delete_all_notification(glue: ArcGlue) {
     let mut glue = glue.lock().unwrap();
 
-    let sql = r#"
-        DELETE FROM notifications;
-    "#;
+    let sql_stmt = table("notifications").delete().build().unwrap();
+    debug!("delete sql_stmt: {:?}", sql_stmt);
 
-    debug!("delete sql: {}", sql);
-
-    let output = glue.execute(sql).unwrap();
+    let output = glue.execute_stmt(&sql_stmt).unwrap();
     debug!("output: {:?}", output);
 }
 
