@@ -652,8 +652,7 @@ dependencies = [
 [[package]]
 name = "gluesql"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9083e6aeeeef1a3367d878f336adcb417e5ce7dabac9e852981d41aeaa676aeb"
+source = "git+https://github.com/gluesql/gluesql?branch=main#3a604c93dddd9e4dcc47357ee3ecce22299709b0"
 dependencies = [
  "gluesql-core",
  "gluesql_memory_storage",
@@ -662,8 +661,7 @@ dependencies = [
 [[package]]
 name = "gluesql-core"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e4ad33156fb7b3fd0ff616af4ed4482c90c47ba11c4323ece3559e17129ff7e"
+source = "git+https://github.com/gluesql/gluesql?branch=main#3a604c93dddd9e4dcc47357ee3ecce22299709b0"
 dependencies = [
  "async-recursion 1.0.0",
  "async-trait",
@@ -690,8 +688,7 @@ dependencies = [
 [[package]]
 name = "gluesql-utils"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ed8961df91f129f68c9fa87dc48d47d7e4d646f34ad295d9122114ac28977e6"
+source = "git+https://github.com/gluesql/gluesql?branch=main#3a604c93dddd9e4dcc47357ee3ecce22299709b0"
 dependencies = [
  "futures",
  "indexmap",
@@ -701,8 +698,7 @@ dependencies = [
 [[package]]
 name = "gluesql_memory_storage"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5811aac0d18719542f60bba38d3ebb58867a846fa6fbe4a0e16d920d5ec46377"
+source = "git+https://github.com/gluesql/gluesql?branch=main#3a604c93dddd9e4dcc47357ee3ecce22299709b0"
 dependencies = [
  "async-trait",
  "gluesql-core",
@@ -1800,9 +1796,9 @@ dependencies = [
 
 [[package]]
 name = "sqlparser"
-version = "0.18.0"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f531637a13132fa3d38c54d4cd8f115905e5dc3e72f6e77bd6160481f482e25d"
+checksum = "d8ec7ef1bad82a2453dbaef7218b6f036e545edcce1ffd55f6e7af7bea43cce2"
 dependencies = [
  "bigdecimal",
  "log",
