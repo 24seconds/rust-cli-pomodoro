@@ -1,4 +1,5 @@
 use chrono::SecondsFormat;
+use gluesql::core::ast_builder::table;
 use gluesql::prelude::{Glue, MemoryStorage, Payload};
 use std::sync::{Arc, Mutex};
 
@@ -14,26 +15,41 @@ pub fn get_memory_glue() -> Glue<MemoryStorage> {
 pub async fn initialize(glue: Arc<Mutex<Glue<MemoryStorage>>>) {
     let mut glue = glue.lock().unwrap();
 
-    let sqls = vec![
-        "DROP TABLE IF EXISTS notifications;",
-        r#"
-        CREATE TABLE notifications (
-            id INTEGER, description TEXT, 
-            work_time INTEGER, break_time INTEGER, 
-            created_at TIMESTAMP, 
-            work_expired_at TIMESTAMP, break_expired_at TIMESTAMP,
-        );"#,
-        r#"DROP TABLE IF EXISTS archived_notifications;"#,
-        r#"CREATE TABLE archived_notifications (
-            id INTEGER, description TEXT, 
-            work_time INTEGER, break_time INTEGER, 
-            created_at TIMESTAMP, 
-            work_expired_at TIMESTAMP, break_expired_at TIMESTAMP,
-        );"#,
+    let sql_stmts = vec![
+        table("notifications")
+            .drop_table_if_exists()
+            .build()
+            .unwrap(),
+        table("notifications")
+            .create_table()
+            .add_column("id INTEGER")
+            .add_column("description TEXT")
+            .add_column("work_time INTEGER")
+            .add_column("break_time INTEGER")
+            .add_column("created_at TIMESTAMP")
+            .add_column("work_expired_at TIMESTAMP")
+            .add_column("break_expired_at TIMESTAMP")
+            .build()
+            .unwrap(),
+        table("archived_notifications")
+            .drop_table_if_exists()
+            .build()
+            .unwrap(),
+        table("archived_notifications")
+            .create_table()
+            .add_column("id INTEGER")
+            .add_column("description TEXT")
+            .add_column("work_time INTEGER")
+            .add_column("break_time INTEGER")
+            .add_column("created_at TIMESTAMP")
+            .add_column("work_expired_at TIMESTAMP")
+            .add_column("break_expired_at TIMESTAMP")
+            .build()
+            .unwrap(),
     ];
 
-    for sql in sqls {
-        let output = glue.execute(sql).unwrap();
+    for stmt in sql_stmts {
+        let output = glue.execute_stmt(&stmt).unwrap();
         debug!("output: {:?}", output);
     }
 }
