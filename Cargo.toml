@@ -26,7 +26,7 @@ gluesql = { git = "https://github.com/gluesql/gluesql", branch = "main", default
 notify-rust = "4.5.10"
 log = "0.4.17"
 env_logger = "0.9.0"
-tabled = { version = "0.8.0", features = ["color"]}
+tabled = { version = "0.9.0", features = ["color"]}
 serde_json = "1.0.85"
 serde = "1.0.144"
 reqwest = { version = "0.11", features = ["json"] }
