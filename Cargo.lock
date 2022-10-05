@@ -650,7 +650,7 @@ dependencies = [
 [[package]]
 name = "gluesql"
 version = "0.12.0"
-source = "git+https://github.com/gluesql/gluesql?branch=main#3a604c93dddd9e4dcc47357ee3ecce22299709b0"
+source = "git+https://github.com/gluesql/gluesql?branch=main#2ef684842276a338fc57615c9e4545e9044f6702"
 dependencies = [
  "gluesql-core",
  "gluesql_memory_storage",
@@ -659,7 +659,7 @@ dependencies = [
 [[package]]
 name = "gluesql-core"
 version = "0.12.0"
-source = "git+https://github.com/gluesql/gluesql?branch=main#3a604c93dddd9e4dcc47357ee3ecce22299709b0"
+source = "git+https://github.com/gluesql/gluesql?branch=main#2ef684842276a338fc57615c9e4545e9044f6702"
 dependencies = [
  "async-recursion 1.0.0",
  "async-trait",
@@ -686,7 +686,7 @@ dependencies = [
 [[package]]
 name = "gluesql-utils"
 version = "0.12.0"
-source = "git+https://github.com/gluesql/gluesql?branch=main#3a604c93dddd9e4dcc47357ee3ecce22299709b0"
+source = "git+https://github.com/gluesql/gluesql?branch=main#2ef684842276a338fc57615c9e4545e9044f6702"
 dependencies = [
  "futures",
  "indexmap",
@@ -696,7 +696,7 @@ dependencies = [
 [[package]]
 name = "gluesql_memory_storage"
 version = "0.12.0"
-source = "git+https://github.com/gluesql/gluesql?branch=main#3a604c93dddd9e4dcc47357ee3ecce22299709b0"
+source = "git+https://github.com/gluesql/gluesql?branch=main#2ef684842276a338fc57615c9e4545e9044f6702"
 dependencies = [
  "async-trait",
  "gluesql-core",
@@ -1577,9 +1577,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.11.11"
+version = "0.11.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b75aa69a3f06bbcc66ede33af2af253c6f7a86b1ca0033f60c580a27074fbf92"
+checksum = "431949c384f4e2ae07605ccaa56d1d9d2ecdb5cadd4f9577ccfab29f2e5149fc"
 dependencies = [
  "base64",
  "bytes",
@@ -1593,10 +1593,10 @@ dependencies = [
  "hyper-tls",
  "ipnet",
  "js-sys",
- "lazy_static",
  "log",
  "mime",
  "native-tls",
+ "once_cell",
  "percent-encoding",
  "pin-project-lite",
  "serde",
@@ -1803,9 +1803,9 @@ dependencies = [
 
 [[package]]
 name = "sqlparser"
-version = "0.19.0"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8ec7ef1bad82a2453dbaef7218b6f036e545edcce1ffd55f6e7af7bea43cce2"
+checksum = "6483de5881514f11fe570f53fcee3cd9194e91eb43659cb356df69f99ef0f83e"
 dependencies = [
  "bigdecimal",
  "log",
