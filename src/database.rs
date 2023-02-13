@@ -1,5 +1,5 @@
 use chrono::SecondsFormat;
-use gluesql::core::ast_builder::table;
+use gluesql::core::ast_builder::{table, Build};
 use gluesql::prelude::{Glue, MemoryStorage, Payload};
 use std::sync::{Arc, Mutex};
 
