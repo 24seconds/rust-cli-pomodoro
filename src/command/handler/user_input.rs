@@ -111,7 +111,11 @@ async fn handle_create(
             notification_task_map.lock().unwrap().insert(id, handle);
             output_accumulator.push(
                 OutputType::Println,
-                format!("[{}] Notification (id: {}) created", chrono::offset::Local::now().to_string(), id)
+                format!(
+                    "[{}] Notification (id: {}) created",
+                    chrono::offset::Local::now().to_string(),
+                    id
+                )
             );
 
             Ok(())
@@ -197,7 +201,11 @@ async fn handle_delete(
             Ok(_) => {
                 output_accumulator.push(
                     OutputType::Println,
-                    format!("[{}] Notification (id: {}) deleted", id)
+                    format!(
+                        "[{}] Notification (id: {}) deleted",
+                        chrono::offset::Local::now().to_string(),
+                        id
+                    )
                 );
             }
             Err(e) => {
