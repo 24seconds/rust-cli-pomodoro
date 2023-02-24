@@ -1,5 +1,6 @@
+use chrono;
 use chrono::Utc;
-use clap::{ ArgMatches, Command, ErrorKind };
+use clap::{ArgMatches, Command, ErrorKind};
 use std::process;
 use std::result;
 use std::str::SplitWhitespace;
@@ -7,17 +8,16 @@ use std::sync::Arc;
 use tabled::object::Segment;
 use tabled::Alignment;
 use tabled::Modify;
-use tabled::{ Style, TableIteratorExt };
-use chrono;
+use tabled::{Style, TableIteratorExt};
 
-use crate::command::output::{ OutputAccumulater, OutputType };
+use crate::command::output::{OutputAccumulater, OutputType};
 use crate::command::util;
-use crate::command::{ self, action::ActionType };
+use crate::command::{self, action::ActionType};
 use crate::error::UserInputHandlerError;
 use crate::notification::notify::notify_work;
-use crate::notification::{ delete_notification, get_new_notification };
-use crate::{ configuration::Configuration, ArcGlue };
-use crate::{ db, spawn_notification, ArcTaskMap };
+use crate::notification::{delete_notification, get_new_notification};
+use crate::{configuration::Configuration, ArcGlue};
+use crate::{db, spawn_notification, ArcTaskMap};
 
 type HandleUserInputResult = result::Result<(), UserInputHandlerError>;
 
@@ -26,7 +26,7 @@ pub async fn handle(
     id_manager: &mut u16,
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
-    configuration: &Arc<Configuration>
+    configuration: &Arc<Configuration>,
 ) -> Result<OutputAccumulater, UserInputHandlerError> {
     let command = command::get_main_command();
     let input = user_input.split_whitespace();
@@ -58,8 +58,9 @@ pub async fn handle(
                 notification_task_map,
                 glue,
                 id_manager,
-                &mut output_accumulator
-            ).await?;
+                &mut output_accumulator,
+            )
+            .await?;
         }
         ActionType::Queue => {
             handle_queue(
@@ -68,11 +69,18 @@ pub async fn handle(
                 notification_task_map,
                 glue,
                 id_manager,
-                &mut output_accumulator
-            ).await?;
+                &mut output_accumulator,
+            )
+            .await?;
         }
         ActionType::Delete => {
-            handle_delete(sub_matches, notification_task_map, glue, &mut output_accumulator).await?;
+            handle_delete(
+                sub_matches,
+                notification_task_map,
+                glue,
+                &mut output_accumulator,
+            )
+            .await?;
         }
         ActionType::List => handle_list(glue, &mut output_accumulator).await?,
         ActionType::Test => handle_test(configuration, &mut output_accumulator).await?,
@@ -90,11 +98,10 @@ async fn handle_create(
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
     id_manager: &mut u16,
-    output_accumulator: &mut OutputAccumulater
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
-    let notification = get_new_notification(matches, id_manager, Utc::now()).map_err(
-        UserInputHandlerError::NotificationError
-    )?;
+    let notification = get_new_notification(matches, id_manager, Utc::now())
+        .map_err(UserInputHandlerError::NotificationError)?;
 
     match notification {
         Some(notification) => {
@@ -105,7 +112,7 @@ async fn handle_create(
                 configuration.clone(),
                 notification_task_map.clone(),
                 glue.clone(),
-                notification
+                notification,
             );
 
             notification_task_map.lock().unwrap().insert(id, handle);
@@ -115,7 +122,7 @@ async fn handle_create(
                     "[{}] Notification (id: {}) created",
                     chrono::offset::Local::now().to_string(),
                     id
-                )
+                ),
             );
 
             Ok(())
@@ -123,7 +130,7 @@ async fn handle_create(
         None => {
             output_accumulator.push(
                 OutputType::Println,
-                String::from("work_time and break_time both can not be zero both")
+                String::from("work_time and break_time both can not be zero both"),
             );
 
             Ok(())
@@ -137,7 +144,7 @@ async fn handle_queue(
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
     id_manager: &mut u16,
-    output_accumulator: &mut OutputAccumulater
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
     let created_at = match db::read_last_expired_notification(glue.clone()).await {
         Some(n) => {
@@ -149,33 +156,29 @@ async fn handle_queue(
         None => Utc::now(),
     };
 
-    let notification = get_new_notification(matches, id_manager, created_at).map_err(
-        UserInputHandlerError::NotificationError
-    )?;
+    let notification = get_new_notification(matches, id_manager, created_at)
+        .map_err(UserInputHandlerError::NotificationError)?;
     match notification {
         Some(notification) => {
             let id = notification.get_id();
             db::create_notification(glue.clone(), &notification).await;
 
-            notification_task_map
-                .lock()
-                .unwrap()
-                .insert(
-                    id,
-                    spawn_notification(
-                        configuration.clone(),
-                        notification_task_map.clone(),
-                        glue.clone(),
-                        notification
-                    )
-                );
+            notification_task_map.lock().unwrap().insert(
+                id,
+                spawn_notification(
+                    configuration.clone(),
+                    notification_task_map.clone(),
+                    glue.clone(),
+                    notification,
+                ),
+            );
             output_accumulator.push(
                 OutputType::Println,
                 format!(
                     "[{}] Notification (id: {}) created and queued",
                     chrono::offset::Local::now().to_string(),
                     id
-                )
+                ),
             );
 
             Ok(())
@@ -188,13 +191,12 @@ async fn handle_delete(
     sub_matches: &ArgMatches,
     notification_task_map: &ArcTaskMap,
     glue: &ArcGlue,
-    output_accumulator: &mut OutputAccumulater
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
     if sub_matches.is_present("id") {
         // delete one
-        let id = util
-            ::parse_arg::<u16>(sub_matches, "id")
-            .map_err(UserInputHandlerError::ParseError)?;
+        let id =
+            util::parse_arg::<u16>(sub_matches, "id").map_err(UserInputHandlerError::ParseError)?;
         debug!("Message::Delete called! {}", id);
 
         match delete_notification(id, notification_task_map.clone(), glue.clone()).await {
@@ -205,7 +207,7 @@ async fn handle_delete(
                         "[{}] Notification (id: {}) deleted",
                         chrono::offset::Local::now().to_string(),
                         id
-                    )
+                    ),
                 );
             }
             Err(e) => {
@@ -221,7 +223,10 @@ async fn handle_delete(
             handle.abort();
         }
         db::delete_and_archive_all_notification(glue.clone()).await;
-        output_accumulator.push(OutputType::Println, String::from("All Notifications deleted"));
+        output_accumulator.push(
+            OutputType::Println,
+            String::from("All Notifications deleted"),
+        );
         debug!("Message::DeleteAll done");
     }
 
@@ -230,23 +235,26 @@ async fn handle_delete(
 
 async fn handle_test(
     configuration: &Arc<Configuration>,
-    output_accumulator: &mut OutputAccumulater
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
     debug!("Message:NotificationTest called!");
-    let report = notify_work(&configuration.clone()).await.map_err(
-        UserInputHandlerError::NotificationError
-    )?;
+    let report = notify_work(&configuration.clone())
+        .await
+        .map_err(UserInputHandlerError::NotificationError)?;
     output_accumulator.push(OutputType::Info, format!("\n{}", report));
 
     debug!("Message:NotificationTest done");
-    output_accumulator.push(OutputType::Println, String::from("Notification Test called"));
+    output_accumulator.push(
+        OutputType::Println,
+        String::from("Notification Test called"),
+    );
 
     Ok(())
 }
 
 async fn handle_list(
     glue: &ArcGlue,
-    output_accumulator: &mut OutputAccumulater
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
     debug!("Message::List called!");
     let notifications = db::list_notification(glue.clone()).await;
@@ -257,7 +265,7 @@ async fn handle_list(
         .with(
             Style::modern()
                 .off_horizontal()
-                .lines([(1, Style::modern().get_horizontal())])
+                .lines([(1, Style::modern().get_horizontal())]),
         )
         .with(Modify::new(Segment::all()).with(Alignment::center()))
         .to_string();
@@ -270,7 +278,7 @@ async fn handle_list(
 
 async fn handle_history(
     glue: &ArcGlue,
-    output_accumulator: &mut OutputAccumulater
+    output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
     debug!("Message:History called!");
     let archived_notifications = db::list_archived_notification(glue.clone()).await;
@@ -281,7 +289,7 @@ async fn handle_history(
         .with(
             Style::modern()
                 .off_horizontal()
-                .lines([(1, Style::modern().get_horizontal())])
+                .lines([(1, Style::modern().get_horizontal())]),
         )
         .with(Modify::new(Segment::all()).with(Alignment::center()))
         .to_string();
@@ -295,7 +303,7 @@ async fn handle_history(
 fn get_matches(
     command: Command,
     input: SplitWhitespace,
-    output_accumulator: &mut OutputAccumulater
+    output_accumulator: &mut OutputAccumulater,
 ) -> Result<Option<ArgMatches>, UserInputHandlerError> {
     match command.try_get_matches_from(input) {
         Ok(args) => Ok(Some(args)),
