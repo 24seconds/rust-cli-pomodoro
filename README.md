@@ -119,7 +119,7 @@ cargo install rust-cli-pomodoro
 
 ### Using credential.json
 pomodoro support slack notification.
-To use it, you need to create `credential.json` file in somewhere in your local machine. `credential.json` supports two keys, `slack` and `discrod`.
+To use it, you need to create `credential.json` file in somewhere in your local machine. `credential.json` supports two keys, `slack` and `discord`.
 The `slack` and `discord` value is json. It looks like this
 
 ```json
