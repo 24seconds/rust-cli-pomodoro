@@ -1,3 +1,4 @@
+use chrono;
 use chrono::Utc;
 use clap::{ArgMatches, Command, ErrorKind};
 use std::process;
@@ -35,7 +36,9 @@ pub async fn handle(
 
     let matches = match get_matches(command, input, &mut output_accumulator)? {
         Some(args) => args,
-        None => return Ok(output_accumulator),
+        None => {
+            return Ok(output_accumulator);
+        }
     };
 
     let (action_type, sub_matches) = matches
@@ -57,7 +60,7 @@ pub async fn handle(
                 id_manager,
                 &mut output_accumulator,
             )
-            .await?
+            .await?;
         }
         ActionType::Queue => {
             handle_queue(
@@ -68,7 +71,7 @@ pub async fn handle(
                 id_manager,
                 &mut output_accumulator,
             )
-            .await?
+            .await?;
         }
         ActionType::Delete => {
             handle_delete(
@@ -77,7 +80,7 @@ pub async fn handle(
                 glue,
                 &mut output_accumulator,
             )
-            .await?
+            .await?;
         }
         ActionType::List => handle_list(glue, &mut output_accumulator).await?,
         ActionType::Test => handle_test(configuration, &mut output_accumulator).await?,
@@ -115,7 +118,11 @@ async fn handle_create(
             notification_task_map.lock().unwrap().insert(id, handle);
             output_accumulator.push(
                 OutputType::Println,
-                format!("Notification (id: {}) created", id),
+                format!(
+                    "[{}] Notification (id: {}) created",
+                    chrono::offset::Local::now().to_string(),
+                    id
+                ),
             );
 
             Ok(())
@@ -167,7 +174,11 @@ async fn handle_queue(
             );
             output_accumulator.push(
                 OutputType::Println,
-                format!("Notification (id: {}) created and queued", id),
+                format!(
+                    "[{}] Notification (id: {}) created and queued",
+                    chrono::offset::Local::now().to_string(),
+                    id
+                ),
             );
 
             Ok(())
@@ -192,13 +203,17 @@ async fn handle_delete(
             Ok(_) => {
                 output_accumulator.push(
                     OutputType::Println,
-                    format!("Notification (id: {}) deleted", id),
+                    format!(
+                        "[{}] Notification (id: {}) deleted",
+                        chrono::offset::Local::now().to_string(),
+                        id
+                    ),
                 );
             }
             Err(e) => {
                 output_accumulator.push(OutputType::Error, format!("Error: {}", e));
             }
-        };
+        }
         debug!("Message::Delete done");
     } else {
         // delete all
