@@ -35,7 +35,7 @@ impl fmt::Display for NotificationError {
             NotificationError::Discord(_) => write!(f, "NotificationError::Discord"),
             NotificationError::EmptyConfiguration => write!(f, "configuration is empty"),
             NotificationError::NewNotification(e) => {
-                write!(f, "faield to get new notification: {}", e)
+                write!(f, "failed to get new notification: {}", e)
             }
             NotificationError::DeletionFail(msg) => write!(f, "{}", msg),
         }

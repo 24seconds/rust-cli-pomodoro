@@ -268,7 +268,7 @@ fn create_uds_address(r#type: UdsType, should_remove: bool) -> std::io::Result<P
     let path = get_uds_address(r#type);
 
     if should_remove && path.exists() {
-        debug!("patt {:?} exists, remove it before binding", &path);
+        debug!("path {:?} exists, remove it before binding", &path);
         fs::remove_file(&path)?;
     }
 
