@@ -68,6 +68,7 @@ mod tests {
 
     use super::{parse_arg, read_input};
 
+    #[test]
     fn test_parse_arg() {
         let m = Command::new("myapp")
             .arg(Arg::new("id").takes_value(true))
