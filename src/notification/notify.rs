@@ -126,8 +126,8 @@ pub async fn notify_work(configuration: &Arc<Configuration>) -> Result<String, N
     let (desktop_result, slack_result, discord_result) = join!(desktop_fut, slack_fut, discord_fut);
 
     Ok(report::generate_notify_report(
-        slack_result,
         desktop_result,
+        slack_result,
         discord_result,
     ))
 }
