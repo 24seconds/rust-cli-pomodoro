@@ -7,6 +7,7 @@ pub use notify::*;
 use chrono::{prelude::*, Duration};
 use clap::ArgMatches;
 use gluesql::core::data::Value;
+use gluesql::prelude::Row;
 use tabled::Tabled;
 
 use crate::db;
@@ -74,50 +75,50 @@ impl<'a> Notification {
         )
     }
 
-    pub fn convert_to_notification(row: Vec<Value>) -> Self {
-        let id = match &row.get(0).unwrap() {
+    pub fn convert_to_notification(row: Row) -> Self {
+        let id = match row.get_value_by_index(0).unwrap() {
             Value::I64(id) => *id as u16,
             _ => {
                 panic!("notification id type mismatch");
             }
         };
 
-        let description = match &row.get(1).unwrap() {
+        let description = match row.get_value_by_index(1).unwrap() {
             Value::Str(s) => s.to_owned(),
             _ => {
                 panic!("notification description type mismatch");
             }
         };
 
-        let work_time = match &row.get(2).unwrap() {
+        let work_time = match row.get_value_by_index(2).unwrap() {
             Value::I64(t) => *t as u16,
             _ => {
                 panic!("notification work_time type mismatch")
             }
         };
 
-        let break_time = match &row.get(3).unwrap() {
+        let break_time = match row.get_value_by_index(3).unwrap() {
             Value::I64(t) => *t as u16,
             _ => {
                 panic!("notification break_time type mismatch")
             }
         };
 
-        let created_at = match &row.get(4).unwrap() {
+        let created_at = match row.get_value_by_index(4).unwrap() {
             Value::Timestamp(t) => Utc.from_local_datetime(t).unwrap(),
             _ => {
                 panic!("notification created_at type mismatch");
             }
         };
 
-        let work_expired_at = match &row.get(5).unwrap() {
+        let work_expired_at = match row.get_value_by_index(5).unwrap() {
             Value::Timestamp(t) => Utc.from_local_datetime(t).unwrap(),
             _ => {
                 panic!("notification work_expired_at type mismatch");
             }
         };
 
-        let break_expired_at = match &row.get(6).unwrap() {
+        let break_expired_at = match row.get_value_by_index(6).unwrap() {
             Value::Timestamp(t) => Utc.from_local_datetime(t).unwrap(),
             _ => {
                 panic!("notification break_expired_at type mismatch");
