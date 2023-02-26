@@ -651,8 +651,9 @@ dependencies = [
 
 [[package]]
 name = "gluesql"
-version = "0.12.0"
-source = "git+https://github.com/gluesql/gluesql?branch=main#2ef684842276a338fc57615c9e4545e9044f6702"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cfdba5a97bf21ac3e766bf3ea7e87c4d84b38a074cee22d8f11c98ba9bd0496"
 dependencies = [
  "gluesql-core",
  "gluesql_memory_storage",
@@ -660,8 +661,9 @@ dependencies = [
 
 [[package]]
 name = "gluesql-core"
-version = "0.12.0"
-source = "git+https://github.com/gluesql/gluesql?branch=main#2ef684842276a338fc57615c9e4545e9044f6702"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a75a1832c0c93b1fdd8e87a9c7b351751e31ac73c9b301790ce8be64239a97ae"
 dependencies = [
  "async-recursion 1.0.0",
  "async-trait",
@@ -687,8 +689,9 @@ dependencies = [
 
 [[package]]
 name = "gluesql-utils"
-version = "0.12.0"
-source = "git+https://github.com/gluesql/gluesql?branch=main#2ef684842276a338fc57615c9e4545e9044f6702"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87fe38351aa3470b3cad6ea070169f9694650458ed97f4011a07e22cf9d97d9f"
 dependencies = [
  "futures",
  "indexmap",
@@ -697,8 +700,9 @@ dependencies = [
 
 [[package]]
 name = "gluesql_memory_storage"
-version = "0.12.0"
-source = "git+https://github.com/gluesql/gluesql?branch=main#2ef684842276a338fc57615c9e4545e9044f6702"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "392eb7714f49518da6f20f3e88afd30982aadb6b2f1bbd6349e8e919e9cf250e"
 dependencies = [
  "async-trait",
  "gluesql-core",
@@ -1805,9 +1809,9 @@ dependencies = [
 
 [[package]]
 name = "sqlparser"
-version = "0.22.0"
+version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6483de5881514f11fe570f53fcee3cd9194e91eb43659cb356df69f99ef0f83e"
+checksum = "0781f2b6bd03e5adf065c8e772b49eaea9f640d06a1b9130330fe8bd2563f4fd"
 dependencies = [
  "bigdecimal",
  "log",
@@ -2173,11 +2177,12 @@ checksum = "936e4b492acfd135421d8dca4b1aa80a7bfc26e702ef3af710e0752684df5372"
 
 [[package]]
 name = "uuid"
-version = "0.8.2"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+checksum = "1674845326ee10d37ca60470760d4288a6f80f304007d92e5c53bab78c9cfd79"
 dependencies = [
  "getrandom",
+ "wasm-bindgen",
 ]
 
 [[package]]
