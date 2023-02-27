@@ -120,6 +120,8 @@ fn validate_path(shell: Shell) -> Result<PathBuf, std::io::Error> {
         // * restarting pc may also work or properly restarting the shell
         Shell::Zsh => function_dir.push(format!("{}/.zsh/completion", home_dir)),
         //Shell::Elvish => function_dir.push(format!("{}/.elvish/completers/", home_dir)),
+
+        // * restarting the shell is enough
         Shell::Bash => function_dir.push(format!("{}/.bash_completion.d", home_dir)),
         _ => {},
     };
@@ -146,34 +148,43 @@ fn edit_shell_file(shell: Shell) -> Result<(), std::io::Error> {
             ))
         }
     };
+
+    let mut file_path = String::new();
+    let mut to_add = String::new();
     match shell {
         Shell::Zsh => {
-            let file_path = format!("{}/.zshrc",home_dir);
-
-            // Open the file for reading
-            let file = File::open(&file_path)?;
-            let reader = BufReader::new(file);
-
-            // Read the contents of the file into a vector of strings
-            let mut lines: Vec<String> = reader.lines().map(|l| l.unwrap()).collect();
-
-            // Check if the fpath line already exists in the file
-            let fpath_line = "fpath+=(~/.zsh/completion)";
-            if !lines.contains(&fpath_line.to_string()) {
-                debug!("Adding to .zshrc: {}", fpath_line);
-                // Append the fpath line to the end of the vector if it doesn't exist
-                lines.push(fpath_line.to_string());
-            }
-
-            // Open the file for writing and write the modified contents to it
-            let file = File::create(&file_path)?;
-            let mut writer = BufWriter::new(file);
-            for line in lines {
-                writeln!(writer, "{}", line)?;
-            }
+            file_path = format!("{}/.zshrc",home_dir);
+            to_add = "fpath+=(~/.zsh/completion)".to_string();
             
         }
+        Shell::Bash => {
+            file_path = format!("{}/.bashrc",home_dir);
+            to_add = "source ~/.bash_completion/pomodoro.bash".to_string();
+        }
         _ => {}
+    }
+
+    if !file_path.is_empty() && !to_add.is_empty() {
+        // Open the file for reading
+        let file = File::open(&file_path)?;
+        let reader = BufReader::new(file);
+
+        // Read the contents of the file into a vector of strings
+        let mut lines: Vec<String> = reader.lines().map(|l| l.unwrap()).collect();
+
+        // Check if the line already exists in the file
+        if !lines.contains(&to_add.to_string()) {
+            debug!("Adding to {}: {}", file_path, to_add);
+            // Append the line to the end of the vector if it doesn't exist
+            lines.push(to_add.to_string());
+        }
+
+        // Open the file for writing and write the modified contents to it
+        let file = File::create(&file_path)?;
+        let mut writer = BufWriter::new(file);
+        for line in lines {
+            writeln!(writer, "{}", line)?;
+        }
     }
     Ok(())
 }
