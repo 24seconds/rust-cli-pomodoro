@@ -124,7 +124,7 @@ fn validate_path(shell: Shell) -> Result<PathBuf, std::io::Error> {
         //Shell::Elvish => function_dir.push(format!("{}/.elvish/completers/", home_dir)),
 
         // * restarting the shell is enough
-        Shell::Bash => function_dir.push(format!("{}/.bash_completion.d", home_dir)),
+        Shell::Bash => function_dir.push(format!("{}/.bash_completion", home_dir)),
         _ => {}
     };
 
