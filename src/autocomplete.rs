@@ -162,7 +162,8 @@ fn edit_shell_file(shell: Shell) -> Result<(), std::io::Error> {
     match shell {
         Shell::Zsh => {
             file_path = format!("{}/.zshrc", home_dir);
-            to_add = "fpath+=(~/.zsh/completion)".to_string();
+            to_add = "fpath+=(~/.zsh/completion)
+autoload -U compinit && compinit".to_string();
         }
         Shell::Bash => {
             file_path = format!("{}/.bashrc", home_dir);
