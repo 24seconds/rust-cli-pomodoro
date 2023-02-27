@@ -2,9 +2,9 @@ use clap::Command;
 use clap_complete::{generate, Generator, Shell};
 use std::fs;
 use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::PathBuf;
 use std::process::{Command as cmd, Stdio};
-use std::io::{BufRead, BufReader, BufWriter, Write};
 
 use crate::command::application::get_main_command;
 
@@ -37,6 +37,7 @@ pub fn add_autocomplete() -> Result<(), Box<dyn std::error::Error>> {
         moving_path.push(file_name);
         debug!("Autocomplete file location: {:?}", moving_path);
 
+        // do not generate any file if already exists
         if verify_autocomplete(&moving_path) {
             debug!("Autocomplete file already exists. Stopping procedure");
             return Ok(());
@@ -44,6 +45,7 @@ pub fn add_autocomplete() -> Result<(), Box<dyn std::error::Error>> {
 
         generate_completion(shell, &mut main_command, file_name)?;
 
+        // move the generated file -> remove -> Edit the shell file if required
         fs::copy(file_name, moving_path)?;
         fs::remove_file(file_name)?;
         edit_shell_file(shell)?;
@@ -112,7 +114,7 @@ fn validate_path(shell: Shell) -> Result<PathBuf, std::io::Error> {
         }
     };
     let mut function_dir = PathBuf::new();
-     match shell {
+    match shell {
         // * except restarting the shell, no other step is required
         Shell::Fish => function_dir.push(format!("{}/.config/fish/functions", home_dir)),
 
@@ -123,9 +125,10 @@ fn validate_path(shell: Shell) -> Result<PathBuf, std::io::Error> {
 
         // * restarting the shell is enough
         Shell::Bash => function_dir.push(format!("{}/.bash_completion.d", home_dir)),
-        _ => {},
+        _ => {}
     };
 
+    // create all the path if it doesn't exist
     if let Err(err) = fs::metadata(&function_dir) {
         match err.kind() {
             std::io::ErrorKind::NotFound => {
@@ -138,7 +141,9 @@ fn validate_path(shell: Shell) -> Result<PathBuf, std::io::Error> {
     Ok(function_dir)
 }
 
+/// Edits shell file for shells that requires extra steps to load the auto completion file 
 fn edit_shell_file(shell: Shell) -> Result<(), std::io::Error> {
+    // get the home dir
     let home_dir = match std::env::var("HOME") {
         Ok(val) => val,
         Err(_) => {
@@ -149,16 +154,18 @@ fn edit_shell_file(shell: Shell) -> Result<(), std::io::Error> {
         }
     };
 
+    // store the path where the file needs to be edited
+    // and the exact part that needs to added in the file
     let mut file_path = String::new();
     let mut to_add = String::new();
+    
     match shell {
         Shell::Zsh => {
-            file_path = format!("{}/.zshrc",home_dir);
+            file_path = format!("{}/.zshrc", home_dir);
             to_add = "fpath+=(~/.zsh/completion)".to_string();
-            
         }
         Shell::Bash => {
-            file_path = format!("{}/.bashrc",home_dir);
+            file_path = format!("{}/.bashrc", home_dir);
             to_add = "source ~/.bash_completion/pomodoro.bash".to_string();
         }
         _ => {}
