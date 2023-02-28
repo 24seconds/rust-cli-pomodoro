@@ -8,6 +8,7 @@ use tokio::time::sleep;
 use tokio::{net::UnixDatagram, sync::mpsc};
 use tokio::{sync::mpsc::Sender, task::JoinHandle};
 
+mod autocomplete;
 mod command;
 mod database;
 mod notification;
@@ -18,6 +19,7 @@ mod ipc;
 mod logging;
 mod report;
 
+use crate::autocomplete::add_autocomplete;
 use crate::error::ConfigurationError;
 use crate::ipc::{create_client_uds, create_server_uds, Bincodec, MessageRequest, MessageResponse};
 use crate::notification::archived_notification;
@@ -57,6 +59,10 @@ enum InputSource {
 async fn main() -> Result<(), Box<dyn Error>> {
     logging::initialize_logging();
     debug!("debug test, start pomodoro...");
+
+    if let Err(e) = add_autocomplete() {
+        debug!("Could not add autocomplete. Error: {}", e);
+    }
 
     let command_type = detect_command_type().await?;
 
