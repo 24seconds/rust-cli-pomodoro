@@ -29,7 +29,6 @@ pub fn add_autocomplete() -> Result<(), Box<dyn std::error::Error>> {
         let (file_name, mut moving_path) = match shell {
             Shell::Fish => ("pomodoro.fish", validate_path(Shell::Fish)?),
             Shell::Zsh => ("_pomodoro.zsh", validate_path(Shell::Zsh)?),
-            //Shell::Elvish => ("pomodoro.elv", validate_path(Shell::Elvish)?),
             Shell::Bash => ("pomodoro.bash", validate_path(Shell::Bash)?),
             _ => return Err("Invalid Shell".into()),
         };
@@ -86,8 +85,7 @@ fn get_current_shell() -> Result<Shell, Box<dyn std::error::Error>> {
             "bash" => Ok(Shell::Bash),
             "zsh" => Ok(Shell::Zsh),
             "fish" => Ok(Shell::Fish),
-            //"elvish" => Ok(Shell::Elvish),
-            _ => return Err("Unknown Shell Found".into()),
+            _ => Err("Unknown Shell Found".into()),
         }
     } else {
         Err("Could not find the shell".into())
@@ -96,10 +94,7 @@ fn get_current_shell() -> Result<Shell, Box<dyn std::error::Error>> {
 
 /// Checks if the autocomplete file already exists
 fn verify_autocomplete(location: &PathBuf) -> bool {
-    match fs::metadata(location) {
-        Ok(_) => true,
-        Err(_) => false,
-    }
+    fs::metadata(location).is_ok()
 }
 
 /// Verifies if shell path already exists or creates them
@@ -121,7 +116,6 @@ fn validate_path(shell: Shell) -> Result<PathBuf, std::io::Error> {
         // * 'autoload -U compinit && compinit' this will reload completion data for the completion to work for pomodoro
         // * restarting pc may also work or properly restarting the shell
         Shell::Zsh => function_dir.push(format!("{}/.zsh/completion", home_dir)),
-        //Shell::Elvish => function_dir.push(format!("{}/.elvish/completers/", home_dir)),
 
         // * restarting the shell is enough
         Shell::Bash => function_dir.push(format!("{}/.bash_completion", home_dir)),
@@ -157,18 +151,17 @@ fn edit_shell_file(shell: Shell) -> Result<(), std::io::Error> {
     // store the path where the file needs to be edited
     // and the exact part that needs to added in the file
     let mut file_path = String::new();
-    let mut to_add = String::new();
+    let mut to_add = Vec::new();
 
     match shell {
         Shell::Zsh => {
             file_path = format!("{}/.zshrc", home_dir);
-            to_add = "fpath+=(~/.zsh/completion)
-autoload -U compinit && compinit"
-                .to_string();
+            to_add.push("fpath+=(~/.zsh/completion)");
+            to_add.push("autoload -U compinit && compinit");
         }
         Shell::Bash => {
             file_path = format!("{}/.bashrc", home_dir);
-            to_add = "source ~/.bash_completion/pomodoro.bash".to_string();
+            to_add.push( "source ~/.bash_completion/pomodoro.bash");
         }
         _ => {}
     }
@@ -182,10 +175,12 @@ autoload -U compinit && compinit"
         let mut lines: Vec<String> = reader.lines().map(|l| l.unwrap()).collect();
 
         // Check if the line already exists in the file
-        if !lines.contains(&to_add.to_string()) {
-            debug!("Adding to {}: {}", file_path, to_add);
-            // Append the line to the end of the vector if it doesn't exist
-            lines.push(to_add.to_string());
+        for line in to_add {
+            if !&lines.contains(&line.to_string()) {
+                debug!("Adding to {}: {}", file_path, line);
+                // Append the line to the end of the vector if it doesn't exist
+                lines.push(line.to_string());
+            }
         }
 
         // Open the file for writing and write the modified contents to it
