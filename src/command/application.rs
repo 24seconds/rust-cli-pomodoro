@@ -24,6 +24,7 @@ pub const DEFAULT_BREAK_TIME: u16 = 5;
 pub enum CommandType {
     StartUp(Arc<Configuration>),
     UdsClient(ArgMatches),
+    AutoComplete(ArgMatches),
 }
 
 pub fn get_start_and_uds_client_command() -> Command<'static> {
@@ -94,6 +95,9 @@ fn get_common_subcommands() -> Vec<Command<'static>> {
             .about("list notifications"),
         Command::new(ActionType::History).about("show archived notifications"),
         Command::new(ActionType::Test).about("test notification"),
+        Command::new("completion")
+            .about("generate completions for shells")
+            .arg(Arg::new("shell").possible_values(["fish", "zsh", "bash"])),
     ]
 }
 
