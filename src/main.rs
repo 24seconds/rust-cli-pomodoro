@@ -1,4 +1,5 @@
 use chrono::Utc;
+use clap_complete::generate;
 use gluesql::prelude::{Glue, MemoryStorage};
 use std::collections::HashMap;
 use std::error::Error;
@@ -8,7 +9,6 @@ use tokio::time::sleep;
 use tokio::{net::UnixDatagram, sync::mpsc};
 use tokio::{sync::mpsc::Sender, task::JoinHandle};
 
-mod autocomplete;
 mod command;
 mod database;
 mod notification;
@@ -19,7 +19,6 @@ mod ipc;
 mod logging;
 mod report;
 
-use crate::autocomplete::add_autocomplete;
 use crate::error::ConfigurationError;
 use crate::ipc::{create_client_uds, create_server_uds, Bincodec, MessageRequest, MessageResponse};
 use crate::notification::archived_notification;
@@ -59,10 +58,6 @@ enum InputSource {
 async fn main() -> Result<(), Box<dyn Error>> {
     logging::initialize_logging();
     debug!("debug test, start pomodoro...");
-
-    if let Err(e) = add_autocomplete() {
-        debug!("Could not add autocomplete. Error: {}", e);
-    }
 
     let command_type = detect_command_type().await?;
 
@@ -158,6 +153,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             handler::uds_client::handle(matches, socket).await?;
         }
+        CommandType::AutoComplete(sub_matches) => {
+            if sub_matches.is_present("shell") {
+                if let Some(shell) = util::parse_shell(&sub_matches) {
+                    let mut main_command = command::get_main_command();
+                    let bin_name = main_command.get_name().to_string();
+                    let mut stdout = std::io::stdout();
+                    generate(shell, &mut main_command, bin_name, &mut stdout);
+                }
+            } else {
+                println!("no shell name was passed");
+            }
+        }
     }
 
     debug!("handle_uds_client_command called successfully");
@@ -169,9 +176,15 @@ async fn detect_command_type() -> Result<CommandType, ConfigurationError> {
     let matches = command::get_start_and_uds_client_command().get_matches();
     debug!("handle_uds_client_command, matches: {:?}", &matches);
 
-    let command_type = match (&matches).subcommand().is_none() {
+    let command_type = match matches.subcommand().is_none() {
         true => CommandType::StartUp(get_configuration(&matches)?),
-        false => CommandType::UdsClient(matches),
+        false => {
+            if let Some(val) = matches.subcommand_matches("completion") {
+                CommandType::AutoComplete(val.to_owned())
+            } else {
+                CommandType::UdsClient(matches)
+            }
+        }
     };
 
     Ok(command_type)
