@@ -1,10 +1,10 @@
 use std::io::{self, BufRead, Write};
 use std::str::FromStr;
 
-use clap::ArgMatches;
-
 use crate::command::{DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
 use crate::error::ParseError;
+use clap::ArgMatches;
+use clap_complete::Shell;
 
 pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), ParseError> {
     let (work_time, break_time) = if matches.is_present("default") {
@@ -17,6 +17,20 @@ pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), Par
     };
 
     Ok((work_time, break_time))
+}
+
+pub fn parse_shell(matches: &ArgMatches) -> Option<Shell> {
+    let shell = matches.value_of("shell");
+    if let Some(shell) = shell {
+        match shell {
+            "fish" => Some(Shell::Fish),
+            "zsh" => Some(Shell::Zsh),
+            "bash" => Some(Shell::Bash),
+            _ => None,
+        }
+    } else {
+        None
+    }
 }
 
 pub fn parse_arg<C>(arg_matches: &ArgMatches, arg_name: &str) -> Result<C, ParseError>

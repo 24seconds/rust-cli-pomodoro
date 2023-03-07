@@ -1,4 +1,5 @@
 use chrono::Utc;
+use clap_complete::generate;
 use gluesql::prelude::{Glue, MemoryStorage};
 use std::collections::HashMap;
 use std::error::Error;
@@ -152,6 +153,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             handler::uds_client::handle(matches, socket).await?;
         }
+        CommandType::AutoComplete(sub_matches) => {
+            if sub_matches.is_present("shell") {
+                if let Some(shell) = util::parse_shell(&sub_matches) {
+                    let mut main_command = command::get_main_command();
+                    let bin_name = main_command.get_name().to_string();
+                    let mut stdout = std::io::stdout();
+                    generate(shell, &mut main_command, bin_name, &mut stdout);
+                }
+            } else {
+                println!("no shell name was passed");
+            }
+        }
     }
 
     debug!("handle_uds_client_command called successfully");
@@ -163,9 +176,15 @@ async fn detect_command_type() -> Result<CommandType, ConfigurationError> {
     let matches = command::get_start_and_uds_client_command().get_matches();
     debug!("handle_uds_client_command, matches: {:?}", &matches);
 
-    let command_type = match (&matches).subcommand().is_none() {
+    let command_type = match matches.subcommand().is_none() {
         true => CommandType::StartUp(get_configuration(&matches)?),
-        false => CommandType::UdsClient(matches),
+        false => {
+            if let Some(val) = matches.subcommand_matches("completion") {
+                CommandType::AutoComplete(val.to_owned())
+            } else {
+                CommandType::UdsClient(matches)
+            }
+        }
     };
 
     Ok(command_type)
