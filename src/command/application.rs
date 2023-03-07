@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn test_get_common_subcommands() {
         let subcommands = get_common_subcommands();
-        assert!(subcommands.len() == 6);
+        assert_eq!(subcommands.len(), 7);
     }
 
     #[test]

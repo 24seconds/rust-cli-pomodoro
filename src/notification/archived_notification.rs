@@ -8,22 +8,19 @@ pub struct ArchivedNotification {
     description: String,
     work_time: u16,
     break_time: u16,
-    // TODO(young): Maybe we don't need created_at field for ArchivedNotification
-    created_at: DateTime<Utc>,
     work_expired_at: DateTime<Utc>,
     break_expired_at: DateTime<Utc>,
 }
 
 impl From<Notification> for ArchivedNotification {
     fn from(n: Notification) -> Self {
-        let (id, desc, wt, bt, created_at, w_expired_at, b_expired_at) = n.get_values();
+        let (id, desc, wt, bt, _, w_expired_at, b_expired_at) = n.get_values();
 
         ArchivedNotification {
             id,
             description: desc.to_string(),
             work_time: wt,
             break_time: bt,
-            created_at,
             work_expired_at: w_expired_at,
             break_expired_at: b_expired_at,
         }

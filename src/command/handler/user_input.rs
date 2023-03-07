@@ -1,4 +1,3 @@
-use chrono;
 use chrono::Utc;
 use clap::{ArgMatches, Command, ErrorKind};
 use std::process;
@@ -120,7 +119,7 @@ async fn handle_create(
                 OutputType::Println,
                 format!(
                     "[{}] Notification (id: {}) created",
-                    chrono::offset::Local::now().to_string(),
+                    chrono::offset::Local::now(),
                     id
                 ),
             );
@@ -176,7 +175,7 @@ async fn handle_queue(
                 OutputType::Println,
                 format!(
                     "[{}] Notification (id: {}) created and queued",
-                    chrono::offset::Local::now().to_string(),
+                    chrono::offset::Local::now(),
                     id
                 ),
             );
@@ -205,7 +204,7 @@ async fn handle_delete(
                     OutputType::Println,
                     format!(
                         "[{}] Notification (id: {}) deleted",
-                        chrono::offset::Local::now().to_string(),
+                        chrono::offset::Local::now(),
                         id
                     ),
                 );

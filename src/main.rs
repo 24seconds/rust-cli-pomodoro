@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let stdin_tx = user_input_tx.clone();
             // TODO(young): handle tokio::spawn return value nicely so that we can use `?` inside
-            let stdinput_handle = spawn_stdinput_handler(stdin_tx);
+            let _stdinput_handle = spawn_stdinput_handler(stdin_tx);
 
             // handle uds
             let uds_input_tx = user_input_tx.clone();
@@ -83,7 +83,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 Some(uds) => {
                     let server_uds = Arc::new(uds);
                     let (server_rx, server_tx) = (server_uds.clone(), server_uds.clone());
-                    let uds_input_handle =
+                    let _uds_input_handle =
                         spawn_uds_input_handler(uds_input_tx, server_tx, server_rx);
 
                     Some(server_uds)
@@ -299,7 +299,7 @@ fn spawn_uds_input_handler(
                     let user_input: UserInput = MessageRequest::into(message);
                     debug!("user_input: {:?}", user_input);
 
-                    let _ = uds_tx.send(user_input).await.unwrap();
+                    uds_tx.send(user_input).await.unwrap();
                 }
                 UdsMessage::Internal(message) => {
                     debug!("internal_message ok, {:?}", message);

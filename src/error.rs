@@ -7,12 +7,12 @@ use std::{error::Error, fmt, io, result};
 pub type NotifyResult = result::Result<(), NotificationError>;
 
 // TODO(young): Replace main error type to this
-enum PomodoroError {
-    NotificationError,
-    ConfigurationError,
-    UdsHandlerError,
-    UserInputHandlerError,
-    ParseError,
+enum _PomodoroError {
+    Notification,
+    Configuration,
+    UdsHandler,
+    UserInputHandler,
+    Parse,
 }
 
 // notification error enum
