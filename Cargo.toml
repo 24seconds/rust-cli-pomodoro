@@ -1,6 +1,6 @@
 [package]
 name = "rust-cli-pomodoro"
-version = "1.3.2"
+version = "1.3.3"
 authors = ["24seconds <24crazyoung@gmail.com>"]
 edition = "2021"
 rust-version = "1.59"
