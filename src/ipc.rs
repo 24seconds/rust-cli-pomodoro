@@ -216,7 +216,7 @@ pub async fn create_client_uds() -> Result<UnixDatagram, std::io::Error> {
     let client_addr = create_uds_address(UdsType::Client, true)?;
 
     let socket = UnixDatagram::bind(client_addr)?;
-    let _ = socket.connect(server_addr)?;
+    socket.connect(server_addr)?;
 
     debug!("create_client_uds called");
     Ok(socket)

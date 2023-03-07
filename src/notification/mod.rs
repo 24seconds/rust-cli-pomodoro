@@ -319,6 +319,7 @@ mod tests {
 
                 NaiveDateTime::new(date, time)
             };
+
             let row = vec![
                 Value::I64(0),
                 Value::Str("sample".to_string()),
@@ -327,7 +328,7 @@ mod tests {
                 Value::Timestamp(naive_date_time),
                 Value::Timestamp(naive_date_time + Duration::minutes(25)),
                 Value::Timestamp(naive_date_time + Duration::minutes(30)),
-            ];
+            ].into();
 
             Notification::convert_to_notification(row)
         };
