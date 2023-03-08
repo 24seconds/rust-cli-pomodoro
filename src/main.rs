@@ -16,6 +16,7 @@ use database as db;
 mod configuration;
 mod error;
 mod ipc;
+mod line_handling;
 mod logging;
 mod report;
 
@@ -42,14 +43,14 @@ pub type ArcGlue = Arc<Mutex<Glue<MemoryStorage>>>;
 pub type ArcTaskMap = Arc<Mutex<TaskMap>>;
 
 #[derive(Debug)]
-struct UserInput {
+pub struct UserInput {
     pub input: String,
     // pub oneshot_tx: oneshot::Sender<String>,
     pub source: InputSource,
 }
 
 #[derive(Debug)]
-enum InputSource {
+pub enum InputSource {
     StandardInput,
     UnixDomainSocket,
 }
@@ -73,7 +74,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let stdin_tx = user_input_tx.clone();
             // TODO(young): handle tokio::spawn return value nicely so that we can use `?` inside
-            let _stdinput_handle = spawn_stdinput_handler(stdin_tx);
+            //let _stdinput_handle = spawn_stdinput_handler(stdin_tx);
+            let _input_handle = line_handling::line_handler(stdin_tx);
 
             // handle uds
             let uds_input_tx = user_input_tx.clone();
@@ -90,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
                 None => None,
             };
-
+            debug!("I am already here");
             // TODO(young) handle `rx.recv().await` returns None case
             // TODO(young): handle tokio::spawn return value nicely so that we can use `?` inside
             while let Some(user_input) = user_input_rx.recv().await {
@@ -253,7 +255,6 @@ pub fn spawn_notification(
 fn spawn_stdinput_handler(tx: Sender<UserInput>) -> JoinHandle<()> {
     tokio::spawn(async move {
         util::print_start_up();
-
         loop {
             debug!("inside stdin task");
             let user_input = util::read_input(&mut io::stdin().lock());
