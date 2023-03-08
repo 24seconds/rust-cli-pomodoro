@@ -74,7 +74,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let stdin_tx = user_input_tx.clone();
             // TODO(young): handle tokio::spawn return value nicely so that we can use `?` inside
-            //let _stdinput_handle = spawn_stdinput_handler(stdin_tx);
             let _input_handle = line_handling::line_handler(stdin_tx);
 
             // handle uds
@@ -92,7 +91,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
                 None => None,
             };
-            debug!("I am already here");
+
             // TODO(young) handle `rx.recv().await` returns None case
             // TODO(young): handle tokio::spawn return value nicely so that we can use `?` inside
             while let Some(user_input) = user_input_rx.recv().await {

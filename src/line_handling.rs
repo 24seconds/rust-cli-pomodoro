@@ -11,7 +11,7 @@ pub fn line_handler(tx: Sender<UserInput>) -> JoinHandle<()> {
     // load history if available. Will create a new file if it didn't exist at saving time.
     // ? change file location to somewhere discreet?
     if rl.load_history("history.txt").is_err() {
-        println!("No previous history.");
+        debug!("No previous history.");
     }
 
     // essentially tries to copy what `spawn_stdinput_handler` did with stdin.read_line
@@ -23,7 +23,7 @@ pub fn line_handler(tx: Sender<UserInput>) -> JoinHandle<()> {
 
             match readline {
                 Ok(line) => {
-                    // add each line to history so arrow up key can work
+                    // add each line to history so arrow up/down key can work
                     rl.add_history_entry(line.as_str()).unwrap();
 
                     // exit command does std::process::exit(0). So save whatever we got this session
