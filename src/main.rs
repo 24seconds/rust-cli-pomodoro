@@ -16,7 +16,7 @@ use database as db;
 mod configuration;
 mod error;
 mod ipc;
-mod line_handling;
+mod line_handler;
 mod logging;
 mod report;
 
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let stdin_tx = user_input_tx.clone();
             // TODO(young): handle tokio::spawn return value nicely so that we can use `?` inside
-            let _input_handle = line_handling::line_handler(stdin_tx);
+            let _input_handle = line_handler::handle(stdin_tx);
 
             // handle uds
             let uds_input_tx = user_input_tx.clone();
@@ -248,24 +248,6 @@ pub fn spawn_notification(
         }
 
         debug!("id: {}, notification work time done!", id);
-    })
-}
-
-fn spawn_stdinput_handler(tx: Sender<UserInput>) -> JoinHandle<()> {
-    tokio::spawn(async move {
-        util::print_start_up();
-        loop {
-            debug!("inside stdin task");
-            let user_input = util::read_input(&mut io::stdin().lock());
-            debug!("user input: {}", &user_input);
-
-            let _ = tx
-                .send(UserInput {
-                    input: user_input,
-                    source: InputSource::StandardInput,
-                })
-                .await;
-        }
     })
 }
 

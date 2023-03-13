@@ -1,4 +1,4 @@
-use std::io::{self, BufRead, Write};
+use std::io::{self, Write};
 use std::str::FromStr;
 
 use crate::command::{DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
@@ -50,18 +50,6 @@ where
     Ok(parsed)
 }
 
-pub fn read_input<R>(stdin: &mut R) -> String
-where
-    R: BufRead,
-{
-    let mut command = String::new();
-
-    stdin.read_line(&mut command).expect("failed to read line");
-    let command = command.trim().to_string();
-
-    command
-}
-
 pub fn print_start_up() {
     let stdout = &mut io::stdout();
     write!(stdout, "> ").unwrap();
@@ -80,7 +68,7 @@ where
 mod tests {
     use clap::{Arg, Command};
 
-    use super::{parse_arg, read_input};
+    use super::parse_arg;
 
     #[test]
     fn test_parse_arg() {
@@ -104,12 +92,5 @@ mod tests {
             .unwrap()
             .to_string()
             .contains("failed to parse arg"));
-    }
-
-    #[test]
-    fn test_read_command() {
-        let mut input = &b"list"[..];
-        let command = read_input(&mut input);
-        assert_eq!("list", command);
     }
 }
