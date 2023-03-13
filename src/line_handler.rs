@@ -31,7 +31,6 @@ pub fn handle(tx: Sender<UserInput>) -> JoinHandle<()> {
                             source: InputSource::StandardInput,
                         })
                         .await;
-                    panic!()
                 }
                 // handles the CTRL + C event
                 Err(ReadlineError::Interrupted) => {
