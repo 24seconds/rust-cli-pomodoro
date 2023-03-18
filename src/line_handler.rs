@@ -41,7 +41,7 @@ pub fn handle(tx: Sender<UserInput>) -> JoinHandle<()> {
                 }
                 Err(err) => {
                     println!("Something went wrong. Error: {:?}", err);
-                    process::exit(0);
+                    process::exit(1);
                 }
             }
         }
