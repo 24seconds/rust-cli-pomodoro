@@ -7,7 +7,7 @@ use clap::ArgMatches;
 use clap_complete::Shell;
 
 pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), ParseError> {
-    let (work_time, break_time) = if matches.is_present("default") {
+    let (work_time, break_time) = if matches.contains_id("default") {
         (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
     } else {
         let work_time = parse_arg::<u16>(matches, "work")?;
@@ -20,9 +20,9 @@ pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), Par
 }
 
 pub fn parse_shell(matches: &ArgMatches) -> Option<Shell> {
-    let shell = matches.value_of("shell");
+    let shell = matches.get_one::<String>("shell");
     if let Some(shell) = shell {
-        match shell {
+        match shell.as_str() {
             "fish" => Some(Shell::Fish),
             "zsh" => Some(Shell::Zsh),
             "bash" => Some(Shell::Bash),
@@ -38,7 +38,7 @@ where
     C: FromStr,
 {
     let str = arg_matches
-        .value_of(arg_name)
+        .get_one::<String>(arg_name)
         .ok_or(format!("failed to get ({}) from cli", arg_name))
         .map_err(ParseError::new)?;
 
@@ -73,7 +73,7 @@ mod tests {
     #[test]
     fn test_parse_arg() {
         let m = Command::new("myapp")
-            .arg(Arg::new("id").takes_value(true))
+            .arg(Arg::new("id").value_name("ID"))
             .get_matches_from("myapp abc".split_whitespace());
 
         // parse as expected
@@ -81,7 +81,7 @@ mod tests {
         assert!(id.eq("abc"));
 
         let m = Command::new("myapp")
-            .arg(Arg::new("id").takes_value(true))
+            .arg(Arg::new("id").value_name("ID"))
             .get_matches_from("myapp abc".split_whitespace());
 
         // error when parsing

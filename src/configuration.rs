@@ -55,7 +55,7 @@ impl Configuration {
 }
 
 pub fn get_configuration(matches: &ArgMatches) -> Result<Arc<Configuration>, ConfigurationError> {
-    let credential_file_path = matches.value_of("config");
+    let credential_file_path = matches.get_one::<String>("config").map(|s| s.as_str());
 
     let (configuration, config_error) = load_configuration(credential_file_path)?;
     let report = generate_configuration_report(&configuration, config_error);

@@ -1,5 +1,6 @@
 use chrono::Utc;
-use clap::{ArgMatches, Command, ErrorKind};
+use clap::error::ErrorKind;
+use clap::{ArgMatches, Command};
 use std::process;
 use std::result;
 use std::str::SplitWhitespace;
@@ -192,7 +193,7 @@ async fn handle_delete(
     glue: &ArcGlue,
     output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
-    if sub_matches.is_present("id") {
+    if sub_matches.contains_id("id") {
         // delete one
         let id =
             util::parse_arg::<u16>(sub_matches, "id").map_err(UserInputHandlerError::ParseError)?;
