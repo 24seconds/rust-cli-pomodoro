@@ -19,7 +19,7 @@ exclude = ["/assets"]
 
 [dependencies]
 tokio = { version = "1.19.2", features = ["macros", "rt-multi-thread", "time", "sync"] }
-clap = "3.2.22"
+clap = "4.1.10"
 chrono = "0.4.22"
 chrono-tz=  "0.6.3"
 gluesql = { version ="0.13.1", default-features = false, features = ["memory-storage"] }
@@ -32,7 +32,7 @@ serde = "1.0.144"
 reqwest = { version = "0.11", features = ["json"] }
 colored = "2"
 bincode = { version = "2.0.0-rc.1", features = ["alloc"]}
-clap_complete = "3.2.2"
+clap_complete = "4.1.5"
 rustyline = "11.0.0"
 
 [[bin]]
