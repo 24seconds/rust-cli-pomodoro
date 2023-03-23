@@ -96,7 +96,7 @@ fn get_common_subcommands() -> Vec<Command> {
         Command::new(ActionType::Test).about("test notification"),
         Command::new("completion")
             .about("generate completions for shells")
-            .arg(Arg::new("shell").value_parser(["fish", "zsh", "bash"])),
+            .arg(Arg::new("shell").value_parser(["fish", "zsh", "bash", "elvish", "powershell"])),
     ]
 }
 

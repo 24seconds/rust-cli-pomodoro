@@ -313,7 +313,7 @@ fn get_matches(
                 ErrorKind::DisplayHelp => {
                     // print!("\n{}\n", err);
                     // TODO(young): test format! works well
-                    output_accumulator.push(OutputType::Print, format!("\n{}\n", err));
+                    output_accumulator.push(OutputType::Print, format!("\n{}\n", err.render().ansi()));
                     return Ok(None);
                 }
                 // clap automatically print version string with out newline.
@@ -321,12 +321,11 @@ fn get_matches(
                     output_accumulator.push(OutputType::Println, String::from(""));
                     return Ok(None);
                 }
-                _ => {
-                    print!("\n error while handling the input, {}\n", err);
-                }
+                _ => Err(UserInputHandlerError::CommandMatchError(err))
+                
             }
 
-            Err(UserInputHandlerError::CommandMatchError(err))
+            
         }
     }
 }

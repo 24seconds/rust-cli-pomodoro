@@ -26,6 +26,8 @@ pub fn parse_shell(matches: &ArgMatches) -> Option<Shell> {
             "fish" => Some(Shell::Fish),
             "zsh" => Some(Shell::Zsh),
             "bash" => Some(Shell::Bash),
+            "elvish" => Some(Shell::Elvish),
+            "powershell" => Some(Shell::PowerShell),
             _ => None,
         }
     } else {
