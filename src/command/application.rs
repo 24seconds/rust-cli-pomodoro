@@ -129,11 +129,56 @@ pub(crate) fn add_args_for_create_subcommand(command: Command) -> Command {
 
 #[cfg(test)]
 mod tests {
-    use clap::Command;
+    use super::{get_start_and_uds_client_command, AUTHOR, BINARY_NAME};
+    use clap::{Arg, Command};
 
     use crate::command::application::get_common_subcommands;
 
     use super::{add_args_for_create_subcommand, get_main_command};
+
+    #[test]
+    fn test_get_start_and_uds_client_command() {
+        let uds_cmd = get_start_and_uds_client_command();
+
+        let uds_sub_cmds = uds_cmd.get_subcommands().collect::<Vec<&Command>>();
+        let main_sub_cmds = get_common_subcommands();
+
+        assert_eq!(uds_cmd.get_name(), BINARY_NAME);
+        assert_eq!(uds_cmd.get_author().unwrap(), AUTHOR);
+
+        // Test that the number of subcommands is the same
+        assert_eq!(main_sub_cmds.len(), uds_sub_cmds.len());
+
+        for (i, main_subcommand) in main_sub_cmds.iter().enumerate() {
+            let uds_subcommand = &uds_sub_cmds[i];
+
+            // Test that the subcommand names are the same
+            assert_eq!(main_subcommand.get_name(), uds_subcommand.get_name());
+
+            let main_args = main_subcommand.get_arguments().collect::<Vec<&Arg>>();
+            let uds_args = uds_subcommand.get_arguments().collect::<Vec<&Arg>>();
+
+            // Test that the number of arguments is the same
+            assert_eq!(main_args.len(), uds_args.len());
+
+            for (j, main_arg) in main_args.iter().enumerate() {
+                let uds_arg = &uds_args[j];
+
+                // Test that the argument names are the same
+                assert_eq!(main_arg.get_id(), uds_arg.get_id());
+
+                // Test that the argument help messages are the same
+                assert_eq!(main_arg.get_help(), uds_arg.get_help());
+
+                // Test that the argument short and long names are the same
+                assert_eq!(main_arg.get_short(), uds_arg.get_short());
+                assert_eq!(main_arg.get_long(), uds_arg.get_long());
+
+                // Test that the argument value names are the same
+                assert_eq!(main_arg.get_value_names(), uds_arg.get_value_names());
+            }
+        }
+    }
 
     #[test]
     fn test_get_main_command() {
