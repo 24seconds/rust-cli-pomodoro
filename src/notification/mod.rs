@@ -223,30 +223,27 @@ impl Tabled for Notification {
     }
 }
 
-// TODO(young): Return error if work time and break time is zero
 pub fn get_new_notification(
     matches: &ArgMatches,
     id_manager: &mut u16,
     created_at: DateTime<Utc>,
-) -> Result<Option<Notification>, NotificationError> {
+) -> Result<Notification, NotificationError> {
     let (work_time, break_time) =
         util::parse_work_and_break_time(matches).map_err(NotificationError::NewNotification)?;
 
     debug!("work_time: {}", work_time);
     debug!("break_time: {}", break_time);
 
-    if work_time == 0 && break_time == 0 {
-        eprintln!("work_time and break_time both can not be zero both");
-        // TODO: This shouldn't return Ok, since it is an error, but for now,
-        // is just a "temporal fix" for returning from the function.
-        return Ok(None);
-    }
-
     let id = get_new_id(id_manager);
 
-    Ok(Some(Notification::new(
-        id, work_time, break_time, created_at,
-    )))
+    if work_time == 0 && break_time == 0 {
+        println!(
+            "NOTE: Creating a session with default values(25 minutes work time & 5 minutes break)"
+        );
+        return Ok(Notification::new(id, 25, 5, created_at));
+    }
+
+    Ok(Notification::new(id, work_time, break_time, created_at))
 }
 
 fn get_new_id(id_manager: &mut u16) -> u16 {
@@ -402,8 +399,6 @@ mod tests {
         let now = Utc::now();
 
         let notification = get_new_notification(&matches, &mut id_manager, now).unwrap();
-        assert!(notification.is_some());
-        let notification = notification.unwrap();
 
         let (id, _, wt, bt, created_at, _, _) = notification.get_values();
         assert_eq!(0, id);

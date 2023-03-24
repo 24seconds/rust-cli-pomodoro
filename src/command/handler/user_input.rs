@@ -103,39 +103,27 @@ async fn handle_create(
     let notification = get_new_notification(matches, id_manager, Utc::now())
         .map_err(UserInputHandlerError::NotificationError)?;
 
-    match notification {
-        Some(notification) => {
-            let id = notification.get_id();
-            db::create_notification(glue.clone(), &notification).await;
+    let id = notification.get_id();
+    db::create_notification(glue.clone(), &notification).await;
 
-            let handle = spawn_notification(
-                configuration.clone(),
-                notification_task_map.clone(),
-                glue.clone(),
-                notification,
-            );
+    let handle = spawn_notification(
+        configuration.clone(),
+        notification_task_map.clone(),
+        glue.clone(),
+        notification,
+    );
 
-            notification_task_map.lock().unwrap().insert(id, handle);
-            output_accumulator.push(
-                OutputType::Println,
-                format!(
-                    "[{}] Notification (id: {}) created",
-                    chrono::offset::Local::now(),
-                    id
-                ),
-            );
+    notification_task_map.lock().unwrap().insert(id, handle);
+    output_accumulator.push(
+        OutputType::Println,
+        format!(
+            "[{}] Notification (id: {}) created",
+            chrono::offset::Local::now(),
+            id
+        ),
+    );
 
-            Ok(())
-        }
-        None => {
-            output_accumulator.push(
-                OutputType::Println,
-                String::from("work_time and break_time both can not be zero both"),
-            );
-
-            Ok(())
-        }
-    }
+    Ok(())
 }
 
 async fn handle_queue(
@@ -158,33 +146,28 @@ async fn handle_queue(
 
     let notification = get_new_notification(matches, id_manager, created_at)
         .map_err(UserInputHandlerError::NotificationError)?;
-    match notification {
-        Some(notification) => {
-            let id = notification.get_id();
-            db::create_notification(glue.clone(), &notification).await;
+    let id = notification.get_id();
+    db::create_notification(glue.clone(), &notification).await;
 
-            notification_task_map.lock().unwrap().insert(
-                id,
-                spawn_notification(
-                    configuration.clone(),
-                    notification_task_map.clone(),
-                    glue.clone(),
-                    notification,
-                ),
-            );
-            output_accumulator.push(
-                OutputType::Println,
-                format!(
-                    "[{}] Notification (id: {}) created and queued",
-                    chrono::offset::Local::now(),
-                    id
-                ),
-            );
+    notification_task_map.lock().unwrap().insert(
+        id,
+        spawn_notification(
+            configuration.clone(),
+            notification_task_map.clone(),
+            glue.clone(),
+            notification,
+        ),
+    );
+    output_accumulator.push(
+        OutputType::Println,
+        format!(
+            "[{}] Notification (id: {}) created and queued",
+            chrono::offset::Local::now(),
+            id
+        ),
+    );
 
-            Ok(())
-        }
-        None => Ok(()),
-    }
+    Ok(())
 }
 
 async fn handle_delete(
