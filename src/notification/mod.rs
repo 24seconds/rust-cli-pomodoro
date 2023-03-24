@@ -10,6 +10,7 @@ use gluesql::core::data::Value;
 use gluesql::prelude::Row;
 use tabled::Tabled;
 
+use crate::command::{DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
 use crate::db;
 use crate::error::NotificationError;
 use crate::{command::util, ArcGlue, ArcTaskMap};
@@ -240,7 +241,12 @@ pub fn get_new_notification(
         println!(
             "NOTE: Creating a session with default values(25 minutes work time & 5 minutes break)"
         );
-        return Ok(Notification::new(id, 25, 5, created_at));
+        return Ok(Notification::new(
+            id,
+            DEFAULT_WORK_TIME,
+            DEFAULT_BREAK_TIME,
+            created_at,
+        ));
     }
 
     Ok(Notification::new(id, work_time, break_time, created_at))
