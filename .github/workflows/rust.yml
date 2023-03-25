@@ -7,6 +7,8 @@ on:
     branches: [ "main" ]
 
 env:
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
   CARGO_TERM_COLOR: always
 
 jobs:
@@ -15,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Run sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.3
     - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose
