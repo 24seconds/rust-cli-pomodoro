@@ -36,7 +36,7 @@ pub fn get_start_and_uds_client_command() -> Command {
         .arg(
             Arg::new("config")
                 .help("read credential json file from this path")
-                .value_name("FILE")
+                .num_args(1)
                 .short('c')
                 .long("config"),
         )
@@ -78,7 +78,7 @@ fn get_common_subcommands() -> Vec<Command> {
             .arg(
                 Arg::new("id")
                     .help("The ID of notification to delete")
-                    .value_name("ID")
+                    .num_args(1)
                     .conflicts_with("all")
                     .short('i')
                     .long("id"),
@@ -105,14 +105,14 @@ pub(crate) fn add_args_for_create_subcommand(command: Command) -> Command {
         .arg(
             Arg::new("work")
                 .help("The focus time. Unit is minutes")
-                .value_name("WORK TIME")
+                .num_args(1)
                 .short('w')
                 .default_value("0"),
         )
         .arg(
             Arg::new("break")
                 .help("The break time, Unit is minutes")
-                .value_name("BREAK TIME")
+                .num_args(1)
                 .short('b')
                 .default_value("0"),
         )

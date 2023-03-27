@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn test_parse_arg() {
         let m = Command::new("myapp")
-            .arg(Arg::new("id").value_name("ID"))
+            .arg(Arg::new("id").num_args(1))
             .get_matches_from("myapp abc".split_whitespace());
 
         // parse as expected
@@ -83,7 +83,7 @@ mod tests {
         assert!(id.eq("abc"));
 
         let m = Command::new("myapp")
-            .arg(Arg::new("id").value_name("ID"))
+            .arg(Arg::new("id").num_args(1))
             .get_matches_from("myapp abc".split_whitespace());
 
         // error when parsing
