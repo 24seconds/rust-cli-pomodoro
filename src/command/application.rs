@@ -40,7 +40,21 @@ pub fn get_start_and_uds_client_command() -> Command {
                 .short('c')
                 .long("config"),
         )
-        .subcommands(get_common_subcommands())
+        .subcommands({
+            let mut cmd = get_common_subcommands();
+            cmd.push(
+                Command::new("completion")
+                    .about("generate completions for shells")
+                    .arg(Arg::new("shell").value_parser([
+                        "fish",
+                        "zsh",
+                        "bash",
+                        "elvish",
+                        "powershell",
+                    ])),
+            );
+            cmd
+        })
 }
 
 pub fn get_main_command() -> Command {
@@ -94,9 +108,6 @@ fn get_common_subcommands() -> Vec<Command> {
             .about("list notifications"),
         Command::new(ActionType::History).about("show archived notifications"),
         Command::new(ActionType::Test).about("test notification"),
-        Command::new("completion")
-            .about("generate completions for shells")
-            .arg(Arg::new("shell").value_parser(["fish", "zsh", "bash", "elvish", "powershell"])),
     ]
 }
 
@@ -139,9 +150,13 @@ mod tests {
     #[test]
     fn test_get_start_and_uds_client_command() {
         let uds_cmd = get_start_and_uds_client_command();
+        let completion_cmd = Command::new("completion")
+            .about("generate completions for shells")
+            .arg(Arg::new("shell").value_parser(["fish", "zsh", "bash", "elvish", "powershell"]));
 
         let uds_sub_cmds = uds_cmd.get_subcommands().collect::<Vec<&Command>>();
-        let main_sub_cmds = get_common_subcommands();
+        let mut main_sub_cmds = get_common_subcommands();
+        main_sub_cmds.push(completion_cmd);
 
         assert_eq!(uds_cmd.get_name(), BINARY_NAME);
         assert_eq!(uds_cmd.get_author().unwrap(), AUTHOR);
@@ -189,7 +204,7 @@ mod tests {
     #[test]
     fn test_get_common_subcommands() {
         let subcommands = get_common_subcommands();
-        assert_eq!(subcommands.len(), 7);
+        assert_eq!(subcommands.len(), 6);
     }
 
     #[test]
