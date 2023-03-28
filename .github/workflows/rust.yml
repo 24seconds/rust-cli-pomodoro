@@ -29,6 +29,8 @@ jobs:
     name: formatting
     runs-on: ubuntu-latest
     steps:
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
       - uses: actions/checkout@v3
       - name: Add rust format
         uses: actions-rs/toolchain@v1.0.6
@@ -39,3 +41,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: |
           cargo fmt -- --check
+
+  run_test:
+    name: Run test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+      - uses: actions/checkout@v3
+      - uses: Swatinem/rust-cache@v2
+      - run: |
+          cargo test
