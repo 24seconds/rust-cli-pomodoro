@@ -155,7 +155,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             handler::uds_client::handle(matches, socket).await?;
         }
         CommandType::AutoComplete(sub_matches) => {
-            if sub_matches.is_present("shell") {
+            if sub_matches.contains_id("shell") {
                 if let Some(shell) = util::parse_shell(&sub_matches) {
                     let mut main_command = command::get_main_command();
                     let bin_name = main_command.get_name().to_string();

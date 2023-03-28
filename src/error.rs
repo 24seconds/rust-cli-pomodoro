@@ -173,7 +173,7 @@ impl fmt::Display for UserInputHandlerError {
             }
             UserInputHandlerError::ParseError(e) => write!(f, "failed to parse: {}", e),
             UserInputHandlerError::CommandMatchError(e) => {
-                write!(f, "failed to get matches: {}", e)
+                write!(f, "failed to get matches: {}", e.render().ansi())
             }
             UserInputHandlerError::NotificationError(e) => write!(f, "{}", e),
         }

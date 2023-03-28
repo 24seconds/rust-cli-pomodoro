@@ -84,7 +84,7 @@ async fn handle_queue(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleU
 }
 
 async fn handle_delete(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
-    let (id, all) = if sub_matches.is_present("id") {
+    let (id, all) = if sub_matches.contains_id("id") {
         (
             util::parse_arg::<u16>(sub_matches, "id").map_err(UdsHandlerError::ParseError)?,
             false,

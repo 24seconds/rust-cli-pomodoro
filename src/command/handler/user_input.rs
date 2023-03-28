@@ -1,5 +1,6 @@
 use chrono::Utc;
-use clap::{ArgMatches, Command, ErrorKind};
+use clap::error::ErrorKind;
+use clap::{ArgMatches, Command};
 use std::process;
 use std::result;
 use std::str::SplitWhitespace;
@@ -192,7 +193,7 @@ async fn handle_delete(
     glue: &ArcGlue,
     output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
-    if sub_matches.is_present("id") {
+    if sub_matches.contains_id("id") {
         // delete one
         let id =
             util::parse_arg::<u16>(sub_matches, "id").map_err(UserInputHandlerError::ParseError)?;
@@ -312,20 +313,17 @@ fn get_matches(
                 ErrorKind::DisplayHelp => {
                     // print!("\n{}\n", err);
                     // TODO(young): test format! works well
-                    output_accumulator.push(OutputType::Print, format!("\n{}\n", err));
-                    return Ok(None);
+                    output_accumulator
+                        .push(OutputType::Print, format!("\n{}\n", err.render().ansi()));
+                    Ok(None)
                 }
                 // clap automatically print version string with out newline.
                 ErrorKind::DisplayVersion => {
                     output_accumulator.push(OutputType::Println, String::from(""));
-                    return Ok(None);
+                    Ok(None)
                 }
-                _ => {
-                    print!("\n error while handling the input, {}\n", err);
-                }
+                _ => Err(UserInputHandlerError::CommandMatchError(err)),
             }
-
-            Err(UserInputHandlerError::CommandMatchError(err))
         }
     }
 }

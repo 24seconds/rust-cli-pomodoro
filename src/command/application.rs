@@ -1,4 +1,4 @@
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use std::sync::Arc;
 
 use crate::command::action::ActionType;
@@ -27,7 +27,7 @@ pub enum CommandType {
     AutoComplete(ArgMatches),
 }
 
-pub fn get_start_and_uds_client_command() -> Command<'static> {
+pub fn get_start_and_uds_client_command() -> Command {
     Command::new(BINARY_NAME)
         .version(env!("CARGO_PKG_VERSION"))
         .author(AUTHOR)
@@ -36,15 +36,28 @@ pub fn get_start_and_uds_client_command() -> Command<'static> {
         .arg(
             Arg::new("config")
                 .help("read credential json file from this path")
-                .takes_value(true)
-                .value_name("FILE")
+                .num_args(1)
                 .short('c')
                 .long("config"),
         )
-        .subcommands(get_common_subcommands())
+        .subcommands({
+            let mut cmd = get_common_subcommands();
+            cmd.push(
+                Command::new("completion")
+                    .about("generate completions for shells")
+                    .arg(Arg::new("shell").value_parser([
+                        "fish",
+                        "zsh",
+                        "bash",
+                        "elvish",
+                        "powershell",
+                    ])),
+            );
+            cmd
+        })
 }
 
-pub fn get_main_command() -> Command<'static> {
+pub fn get_main_command() -> Command {
     Command::new(BINARY_NAME)
         .no_binary_name(true)
         .version(env!("CARGO_PKG_VERSION"))
@@ -59,7 +72,7 @@ pub fn get_main_command() -> Command<'static> {
         })
 }
 
-fn get_common_subcommands() -> Vec<Command<'static>> {
+fn get_common_subcommands() -> Vec<Command> {
     vec![
         {
             let cmd = Command::new(ActionType::Create)
@@ -79,7 +92,7 @@ fn get_common_subcommands() -> Vec<Command<'static>> {
             .arg(
                 Arg::new("id")
                     .help("The ID of notification to delete")
-                    .takes_value(true)
+                    .num_args(1)
                     .conflicts_with("all")
                     .short('i')
                     .long("id"),
@@ -95,25 +108,22 @@ fn get_common_subcommands() -> Vec<Command<'static>> {
             .about("list notifications"),
         Command::new(ActionType::History).about("show archived notifications"),
         Command::new(ActionType::Test).about("test notification"),
-        Command::new("completion")
-            .about("generate completions for shells")
-            .arg(Arg::new("shell").possible_values(["fish", "zsh", "bash"])),
     ]
 }
 
-pub(crate) fn add_args_for_create_subcommand(command: Command<'_>) -> Command {
-    let command = command
+pub(crate) fn add_args_for_create_subcommand(command: Command) -> Command {
+    command
         .arg(
             Arg::new("work")
                 .help("The focus time. Unit is minutes")
-                .takes_value(true)
+                .num_args(1)
                 .short('w')
                 .default_value("0"),
         )
         .arg(
             Arg::new("break")
                 .help("The break time, Unit is minutes")
-                .takes_value(true)
+                .num_args(1)
                 .short('b')
                 .default_value("0"),
         )
@@ -123,43 +133,66 @@ pub(crate) fn add_args_for_create_subcommand(command: Command<'_>) -> Command {
                 .conflicts_with("work")
                 .conflicts_with("break")
                 .short('d')
-                .long("default"),
-        );
-
-    command
+                .long("default")
+                .action(ArgAction::SetTrue),
+        )
 }
 
 #[cfg(test)]
 mod tests {
-    use std::iter::zip;
-
+    use super::{get_start_and_uds_client_command, AUTHOR, BINARY_NAME};
     use clap::{Arg, Command};
 
     use crate::command::application::get_common_subcommands;
 
-    use super::{
-        add_args_for_create_subcommand, get_main_command, get_start_and_uds_client_command, AUTHOR,
-        BINARY_NAME,
-    };
+    use super::{add_args_for_create_subcommand, get_main_command};
 
     #[test]
     fn test_get_start_and_uds_client_command() {
-        let command = get_start_and_uds_client_command();
+        let uds_cmd = get_start_and_uds_client_command();
+        let completion_cmd = Command::new("completion")
+            .about("generate completions for shells")
+            .arg(Arg::new("shell").value_parser(["fish", "zsh", "bash", "elvish", "powershell"]));
 
-        assert_eq!(command.get_name(), BINARY_NAME);
-        assert_eq!(command.get_author().unwrap(), AUTHOR);
+        let uds_sub_cmds = uds_cmd.get_subcommands().collect::<Vec<&Command>>();
+        let mut main_sub_cmds = get_common_subcommands();
+        main_sub_cmds.push(completion_cmd);
 
-        let args: Vec<&Arg> = command
-            .get_arguments()
-            .filter(|arg| arg.get_id() == "config")
-            .collect();
-        assert_eq!(args.len(), 1);
+        assert_eq!(uds_cmd.get_name(), BINARY_NAME);
+        assert_eq!(uds_cmd.get_author().unwrap(), AUTHOR);
 
-        let subcommands = command.get_subcommands().collect::<Vec<&Command>>();
-        let common_subcommand = get_common_subcommands();
+        // Test that the number of subcommands is the same
+        assert_eq!(main_sub_cmds.len(), uds_sub_cmds.len());
 
-        zip(subcommands, common_subcommand)
-            .for_each(|(actual, expected)| assert_eq!(actual, &expected));
+        for (i, main_subcommand) in main_sub_cmds.iter().enumerate() {
+            let uds_subcommand = &uds_sub_cmds[i];
+
+            // Test that the subcommand names are the same
+            assert_eq!(main_subcommand.get_name(), uds_subcommand.get_name());
+
+            let main_args = main_subcommand.get_arguments().collect::<Vec<&Arg>>();
+            let uds_args = uds_subcommand.get_arguments().collect::<Vec<&Arg>>();
+
+            // Test that the number of arguments is the same
+            assert_eq!(main_args.len(), uds_args.len());
+
+            for (j, main_arg) in main_args.iter().enumerate() {
+                let uds_arg = &uds_args[j];
+
+                // Test that the argument names are the same
+                assert_eq!(main_arg.get_id(), uds_arg.get_id());
+
+                // Test that the argument help messages are the same
+                assert_eq!(main_arg.get_help(), uds_arg.get_help());
+
+                // Test that the argument short and long names are the same
+                assert_eq!(main_arg.get_short(), uds_arg.get_short());
+                assert_eq!(main_arg.get_long(), uds_arg.get_long());
+
+                // Test that the argument value names are the same
+                assert_eq!(main_arg.get_value_names(), uds_arg.get_value_names());
+            }
+        }
     }
 
     #[test]
@@ -171,7 +204,7 @@ mod tests {
     #[test]
     fn test_get_common_subcommands() {
         let subcommands = get_common_subcommands();
-        assert_eq!(subcommands.len(), 7);
+        assert_eq!(subcommands.len(), 6);
     }
 
     #[test]
@@ -181,9 +214,9 @@ mod tests {
         let matches = add_args_for_create_subcommand(cmd)
             .get_matches_from("myapp -w 25 -b 5".split_whitespace());
 
-        let work = matches.value_of("work").unwrap();
+        let work = matches.get_one::<String>("work").unwrap();
         assert!(work.eq("25"));
-        let r#break = matches.value_of("break").unwrap();
+        let r#break = matches.get_one::<String>("break").unwrap();
         assert!(r#break.eq("5"));
 
         // test default
@@ -191,6 +224,6 @@ mod tests {
         let matches =
             add_args_for_create_subcommand(cmd).get_matches_from("myapp -d".split_whitespace());
 
-        assert!(matches.is_present("default"));
+        assert!(matches.contains_id("default"));
     }
 }

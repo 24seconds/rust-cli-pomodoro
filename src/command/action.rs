@@ -1,3 +1,5 @@
+use clap::builder::Str;
+
 use crate::{
     command::application::{CLEAR, CREATE, DELETE, EXIT, HISTORY, LIST, LS, Q, QUEUE, TEST},
     error::ParseError,
@@ -44,6 +46,21 @@ impl From<ActionType> for String {
             ActionType::Exit => String::from(EXIT),
             ActionType::Clear => String::from(CLEAR),
             ActionType::History => String::from(HISTORY),
+        }
+    }
+}
+
+impl From<ActionType> for Str {
+    fn from(action: ActionType) -> Self {
+        match action {
+            ActionType::Create => CREATE.into(),
+            ActionType::Queue => QUEUE.into(),
+            ActionType::Delete => DELETE.into(),
+            ActionType::List => LIST.into(),
+            ActionType::Test => TEST.into(),
+            ActionType::Exit => EXIT.into(),
+            ActionType::Clear => CLEAR.into(),
+            ActionType::History => HISTORY.into(),
         }
     }
 }
