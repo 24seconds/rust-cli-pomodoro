@@ -266,7 +266,7 @@ async fn handle_list(
         .with(
             Style::modern()
                 .off_horizontal()
-                .horizontals([HorizontalLine::new(1, Style::modern().get_horizontal())]), //.lines([(1, Style::modern().get_horizontal())]),
+                .horizontals([HorizontalLine::new(1, Style::modern().get_horizontal())]),
         )
         .with(Modify::new(Segment::all()).with(Alignment::center()))
         .to_string();
