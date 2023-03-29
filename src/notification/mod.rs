@@ -8,6 +8,7 @@ use chrono::{prelude::*, Duration};
 use clap::ArgMatches;
 use gluesql::core::data::Value;
 use gluesql::prelude::Row;
+use std::borrow::Cow;
 use tabled::Tabled;
 
 use crate::db;
@@ -140,7 +141,7 @@ impl<'a> Notification {
 impl Tabled for Notification {
     const LENGTH: usize = 7;
 
-    fn fields(&self) -> Vec<String> {
+    fn fields(&self) -> Vec<Cow<'_, str>> {
         let utc = Utc::now();
 
         let id = self.id.to_string();
@@ -197,17 +198,17 @@ impl Tabled for Notification {
         };
 
         vec![
-            id,
-            work_remaining,
-            break_remaining,
-            start_at,
-            work_expired_at,
-            break_expired_at,
-            description,
+            id.into(),
+            work_remaining.into(),
+            break_remaining.into(),
+            start_at.into(),
+            work_expired_at.into(),
+            break_expired_at.into(),
+            description.into(),
         ]
     }
 
-    fn headers() -> Vec<String> {
+    fn headers() -> Vec<Cow<'static, str>> {
         vec![
             "id",
             "work_remaining (min)",
@@ -218,7 +219,7 @@ impl Tabled for Notification {
             "description",
         ]
         .into_iter()
-        .map(|x| x.to_string())
+        .map(|x| x.to_string().into())
         .collect()
     }
 }
