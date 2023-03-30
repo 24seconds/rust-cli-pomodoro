@@ -304,6 +304,7 @@ pub async fn delete_notification(
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
     use std::sync::Arc;
 
     use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
@@ -420,7 +421,11 @@ mod tests {
         //With configuration file
 
         let (configuration, _) = load_configuration(Some(
-            &(env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json"),
+            PathBuf::from(
+                env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json",
+            )
+            .to_str()
+            .unwrap(),
         ))
         .unwrap();
 
@@ -458,7 +463,11 @@ mod tests {
         //with configuration file
 
         let (configuration, _) = load_configuration(Some(
-            &(env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json"),
+            PathBuf::from(
+                env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json",
+            )
+            .to_str()
+            .unwrap(),
         ))
         .unwrap();
 
@@ -493,7 +502,11 @@ mod tests {
 
         //with configuration file
         let (configuration, _) = load_configuration(Some(
-            &(env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json"),
+            PathBuf::from(
+                env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json",
+            )
+            .to_str()
+            .unwrap(),
         ))
         .unwrap();
 
