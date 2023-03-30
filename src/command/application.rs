@@ -117,15 +117,13 @@ pub(crate) fn add_args_for_create_subcommand(command: Command) -> Command {
             Arg::new("work")
                 .help("The focus time. Unit is minutes")
                 .num_args(1)
-                .short('w')
-                .default_value("0"),
+                .short('w'),
         )
         .arg(
             Arg::new("break")
                 .help("The break time, Unit is minutes")
                 .num_args(1)
-                .short('b')
-                .default_value("0"),
+                .short('b'),
         )
         .arg(
             Arg::new("default")
