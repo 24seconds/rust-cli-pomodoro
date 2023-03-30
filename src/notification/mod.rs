@@ -245,13 +245,11 @@ pub fn get_new_notification(
     };
 
     if matches.get_one::<String>("work").is_some() {
-        println!("work is some");
         work_time =
             parse_arg::<u16>(matches, "work").map_err(NotificationError::NewNotification)?;
     }
 
     if matches.get_one::<String>("break").is_some() {
-        println!("break is some");
         break_time =
             parse_arg::<u16>(matches, "break").map_err(NotificationError::NewNotification)?;
     }
