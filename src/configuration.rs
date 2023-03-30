@@ -12,7 +12,7 @@ use crate::report::generate_configuration_report;
 
 pub const SLACK_API_URL: &str = "https://slack.com/api/chat.postMessage";
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default, Clone)]
 pub struct Configuration {
     #[serde(rename(deserialize = "slack"))]
     slack_configuration: Option<SlackConfiguration>,
@@ -22,13 +22,13 @@ pub struct Configuration {
     break_time_default_value: Option<u16>,
 }
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default, Clone)]
 struct SlackConfiguration {
     token: Option<String>,
     channel: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default, Clone)]
 struct DiscordConfiguration {
     webhook_url: Option<String>,
 }
@@ -139,11 +139,11 @@ mod tests {
 
         let work_time = config.get_work_time();
         assert_eq!(true, work_time.is_some());
-        assert_eq!(work_time.unwrap(), 25);
+        assert_eq!(work_time.unwrap(), 30);
 
         let break_time = config.get_break_time();
         assert_eq!(true, break_time.is_some());
-        assert_eq!(break_time.unwrap(), 5);
+        assert_eq!(break_time.unwrap(), 10);
     }
 
     #[test]
