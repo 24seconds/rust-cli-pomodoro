@@ -246,12 +246,14 @@ pub fn get_new_notification(
 
     if matches.get_one::<String>("work").is_some() {
         println!("work is some");
-        work_time = parse_arg::<u16>(matches, "work").map_err(NotificationError::NewNotification)?;
+        work_time =
+            parse_arg::<u16>(matches, "work").map_err(NotificationError::NewNotification)?;
     }
 
     if matches.get_one::<String>("break").is_some() {
         println!("break is some");
-        break_time = parse_arg::<u16>(matches, "break").map_err(NotificationError::NewNotification)?;
+        break_time =
+            parse_arg::<u16>(matches, "break").map_err(NotificationError::NewNotification)?;
     }
 
     debug!("work_time: {}", work_time);
@@ -417,8 +419,10 @@ mod tests {
         let mut id_manager = 0;
         let now = Utc::now();
 
-        let (configuration, _) = load_configuration(Some("./../../resources/test/mock_configuration.json")).unwrap();
-        let notification = get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap(); 
+        let (configuration, _) =
+            load_configuration(Some("./../../resources/test/mock_configuration.json")).unwrap();
+        let notification =
+            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap();
 
         let (id, _, wt, bt, created_at, _, _) = notification.get_values();
         assert_eq!(0, id);
