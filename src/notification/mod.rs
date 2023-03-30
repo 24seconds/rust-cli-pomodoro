@@ -417,8 +417,11 @@ mod tests {
         let mut id_manager = 0;
         let now = Utc::now();
 
-        let (configuration, _) =
-            load_configuration(Some("./../../resources/test/mock_configuration.json")).unwrap();
+        let (configuration, _) = load_configuration(Some(
+            &(env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json"),
+        ))
+        .unwrap();
+
         let notification =
             get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap();
 
