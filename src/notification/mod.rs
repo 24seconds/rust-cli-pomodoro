@@ -1,6 +1,8 @@
 pub(crate) mod archived_notification;
 pub(crate) mod notify;
 
+use std::sync::Arc;
+
 pub use archived_notification::*;
 pub use notify::*;
 
@@ -10,10 +12,12 @@ use gluesql::core::data::Value;
 use gluesql::prelude::Row;
 use tabled::Tabled;
 
+use crate::command::util::parse_arg;
 use crate::command::{DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
+use crate::configuration::Configuration;
 use crate::db;
 use crate::error::NotificationError;
-use crate::{command::util, ArcGlue, ArcTaskMap};
+use crate::{ArcGlue, ArcTaskMap};
 
 /// The notification schema used to store to database
 #[derive(Debug)]
@@ -228,26 +232,32 @@ pub fn get_new_notification(
     matches: &ArgMatches,
     id_manager: &mut u16,
     created_at: DateTime<Utc>,
+    configuration: Arc<Configuration>,
 ) -> Result<Notification, NotificationError> {
-    let (work_time, break_time) =
-        util::parse_work_and_break_time(matches).map_err(NotificationError::NewNotification)?;
+    let mut work_time = match configuration.get_work_time() {
+        Some(work_time) => work_time,
+        None => DEFAULT_WORK_TIME,
+    };
+
+    let mut break_time = match configuration.get_break_time() {
+        Some(break_time) => break_time,
+        None => DEFAULT_BREAK_TIME,
+    };
+
+    if matches.get_one::<String>("work").is_some() {
+        println!("work is some");
+        work_time = parse_arg::<u16>(matches, "work").map_err(NotificationError::NewNotification)?;
+    }
+
+    if matches.get_one::<String>("break").is_some() {
+        println!("break is some");
+        break_time = parse_arg::<u16>(matches, "break").map_err(NotificationError::NewNotification)?;
+    }
 
     debug!("work_time: {}", work_time);
     debug!("break_time: {}", break_time);
 
     let id = get_new_id(id_manager);
-
-    if work_time == 0 && break_time == 0 {
-        println!(
-            "NOTE: Creating a session with default values(25 minutes work time & 5 minutes break)"
-        );
-        return Ok(Notification::new(
-            id,
-            DEFAULT_WORK_TIME,
-            DEFAULT_BREAK_TIME,
-            created_at,
-        ));
-    }
 
     Ok(Notification::new(id, work_time, break_time, created_at))
 }
@@ -294,12 +304,15 @@ pub async fn delete_notification(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
     use clap::Command;
     use gluesql::core::data::Value;
     use tabled::Tabled;
 
     use crate::command::add_args_for_create_subcommand;
+    use crate::configuration::load_configuration;
 
     use super::get_new_notification;
     use super::Notification;
@@ -404,7 +417,8 @@ mod tests {
         let mut id_manager = 0;
         let now = Utc::now();
 
-        let notification = get_new_notification(&matches, &mut id_manager, now).unwrap();
+        let (configuration, _) = load_configuration(Some("./../../resources/test/mock_configuration.json")).unwrap();
+        let notification = get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap(); 
 
         let (id, _, wt, bt, created_at, _, _) = notification.get_values();
         assert_eq!(0, id);

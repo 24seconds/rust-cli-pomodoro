@@ -100,7 +100,7 @@ async fn handle_create(
     id_manager: &mut u16,
     output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
-    let notification = get_new_notification(matches, id_manager, Utc::now())
+    let notification = get_new_notification(matches, id_manager, Utc::now(), configuration.clone())
         .map_err(UserInputHandlerError::NotificationError)?;
 
     let id = notification.get_id();
@@ -144,7 +144,7 @@ async fn handle_queue(
         None => Utc::now(),
     };
 
-    let notification = get_new_notification(matches, id_manager, created_at)
+    let notification = get_new_notification(matches, id_manager, created_at, configuration.clone())
         .map_err(UserInputHandlerError::NotificationError)?;
     let id = notification.get_id();
     db::create_notification(glue.clone(), &notification).await;
