@@ -65,14 +65,14 @@ impl Tabled for ArchivedNotification {
         };
 
         vec![
-            id.into(),
-            self.work_time.to_string().into(),
-            self.break_time.to_string().into(),
-            started_at.into(),
-            work_expired_at.into(),
-            break_expired_at.into(),
-            description.into(),
-        ]
+            id,
+            self.work_time.to_string(),
+            self.break_time.to_string(),
+            started_at,
+            work_expired_at,
+            break_expired_at,
+            description,
+        ].into_iter().map(|x| x.into()).collect()
     }
 
     fn headers() -> Vec<Cow<'static, str>> {

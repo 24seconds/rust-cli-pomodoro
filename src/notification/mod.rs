@@ -198,14 +198,14 @@ impl Tabled for Notification {
         };
 
         vec![
-            id.into(),
-            work_remaining.into(),
-            break_remaining.into(),
-            start_at.into(),
-            work_expired_at.into(),
-            break_expired_at.into(),
-            description.into(),
-        ]
+            id,
+            work_remaining,
+            break_remaining,
+            start_at,
+            work_expired_at,
+            break_expired_at,
+            description,
+        ].into_iter().map(|x| x.into()).collect()
     }
 
     fn headers() -> Vec<Cow<'static, str>> {
