@@ -115,19 +115,29 @@ pub(crate) fn add_args_for_create_subcommand(command: Command) -> Command {
     command
         .arg(
             Arg::new("work")
-                .help("The focus time. Unit is minutes")
+                .long_help("The focus time in minutes.
+If no value is passed, the work time is obtained from `work_time_default_value` in the given configuration file.
+And if no configuration file is passed or `work_time_default_value` is not present, then 25 is used as the work time.
+")
                 .num_args(1)
                 .short('w'),
         )
         .arg(
             Arg::new("break")
-                .help("The break time, Unit is minutes")
+                .long_help("The break time in minutes.
+If no value is passed, the break time is obtained from `break_time_default_value` in the given configuration file.
+And if no configuration file is passed or `break_time_default_value` is not present, then 5 is used as the break time.
+")
                 .num_args(1)
                 .short('b'),
         )
         .arg(
             Arg::new("default")
-                .help("The flag to create default notification, 25 mins work and 5 min break")
+                .long_help(
+                    "The flag to create default notification.
+The values are obtained from `work_time_default_value` and `break_time_default_value` in the given configuration file.
+If no configuration file is passed or the keys are not present, then 25 minutes for work and 5 minutes for break is considered.
+")
                 .conflicts_with("work")
                 .conflicts_with("break")
                 .short('d')
