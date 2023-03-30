@@ -18,6 +18,8 @@ pub struct Configuration {
     slack_configuration: Option<SlackConfiguration>,
     #[serde(rename(deserialize = "discord"))]
     discord_configuration: Option<DiscordConfiguration>,
+    work_time_default_value: Option<u16>,
+    break_time_default_value: Option<u16>,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -52,12 +54,20 @@ impl Configuration {
             None => &None,
         }
     }
+
+    pub fn get_work_time(&self) -> Option<u16> {
+        return self.work_time_default_value;
+    }
+
+    pub fn get_break_time(&self) -> Option<u16> {
+        return self.break_time_default_value;
+    }
 }
 
 pub fn get_configuration(matches: &ArgMatches) -> Result<Arc<Configuration>, ConfigurationError> {
-    let credential_file_path = matches.get_one::<String>("config").map(|s| s.as_str());
+    let configuration_file_path = matches.get_one::<String>("config").map(|s| s.as_str());
 
-    let (configuration, config_error) = load_configuration(credential_file_path)?;
+    let (configuration, config_error) = load_configuration(configuration_file_path)?;
     let report = generate_configuration_report(&configuration, config_error);
     info!("\nconfig flag result!\n{}", report);
 
@@ -65,9 +75,9 @@ pub fn get_configuration(matches: &ArgMatches) -> Result<Arc<Configuration>, Con
 }
 
 pub fn load_configuration(
-    credential_file: Option<&str>,
+    configuration_file: Option<&str>,
 ) -> Result<(Configuration, Option<ConfigurationError>), ConfigurationError> {
-    let (configuration, error) = match credential_file {
+    let (configuration, error) = match configuration_file {
         Some(f) => {
             let path = env::current_dir()
                 .map_err(ConfigurationError::LoadFail)?
@@ -108,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_initialize_configuration_some() {
-        let file = PathBuf::from("resources/test/mock_credential.json");
+        let file = PathBuf::from("resources/test/mock_configuration.json");
         let file = file.to_str();
 
         let result = load_configuration(file);
@@ -126,6 +136,14 @@ mod tests {
         let discord_webhook_url = config.get_discord_webhook_url();
         assert_eq!(true, discord_webhook_url.is_some());
         assert!(discord_webhook_url.as_ref().unwrap().eq("your-webhook-url"));
+
+        let work_time = config.get_work_time();
+        assert_eq!(true, work_time.is_some());
+        assert_eq!(work_time.unwrap(), 25);
+
+        let break_time = config.get_break_time();
+        assert_eq!(true, break_time.is_some());
+        assert_eq!(break_time.unwrap(), 5);
     }
 
     #[test]
@@ -145,6 +163,12 @@ mod tests {
 
                 let discord_webhook_url = config.get_discord_webhook_url();
                 assert_eq!(true, discord_webhook_url.is_none());
+
+                let work_time = config.get_work_time();
+                assert_eq!(true, work_time.is_none());
+
+                let break_time = config.get_break_time();
+                assert_eq!(true, break_time.is_none());
             });
     }
 }
