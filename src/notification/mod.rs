@@ -205,7 +205,10 @@ impl Tabled for Notification {
             work_expired_at,
             break_expired_at,
             description,
-        ].into_iter().map(|x| x.into()).collect()
+        ]
+        .into_iter()
+        .map(|x| x.into())
+        .collect()
     }
 
     fn headers() -> Vec<Cow<'static, str>> {
