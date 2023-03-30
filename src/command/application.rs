@@ -35,7 +35,7 @@ pub fn get_start_and_uds_client_command() -> Command {
         .args_conflicts_with_subcommands(true)
         .arg(
             Arg::new("config")
-                .help("read credential json file from this path")
+                .help("Read configuration json file from this path")
                 .num_args(1)
                 .short('c')
                 .long("config"),
