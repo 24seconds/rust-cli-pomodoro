@@ -257,6 +257,10 @@ pub fn get_new_notification(
     debug!("work_time: {}", work_time);
     debug!("break_time: {}", break_time);
 
+    if work_time == 0 && break_time == 0 {
+        return Err(NotificationError::EmptyTimeValues);
+    }
+
     let id = get_new_id(id_manager);
 
     Ok(Notification::new(id, work_time, break_time, created_at))
@@ -610,5 +614,39 @@ mod tests {
         assert_eq!(25, wt);
         assert_eq!(25, bt);
         assert_eq!(now, created_at);
+    }
+
+    #[test]
+    fn test_empty_time_values() {
+        let cmd = Command::new("myapp");
+        let matches = add_args_for_create_subcommand(cmd)
+            .get_matches_from("myapp -w 0 -b 0".split_whitespace());
+        let mut id_manager = 0;
+        let now = Utc::now();
+
+        //With configuration file
+
+        let (configuration, _) = load_configuration(Some(
+            PathBuf::from(
+                env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json",
+            )
+            .to_str()
+            .unwrap(),
+        ))
+        .unwrap();
+
+        let notification =
+            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration));
+
+        assert!(notification.is_err());
+
+        //without configuration file
+
+        let (configuration, _) = load_configuration(Some("this_path_does_not_exist")).unwrap();
+
+        let notification =
+            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration));
+
+        assert!(notification.is_err());
     }
 }
