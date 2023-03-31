@@ -6,6 +6,7 @@ use std::result;
 use std::str::SplitWhitespace;
 use std::sync::Arc;
 use tabled::object::Segment;
+use tabled::style::HorizontalLine;
 use tabled::Alignment;
 use tabled::Modify;
 use tabled::{Style, TableIteratorExt};
@@ -265,7 +266,7 @@ async fn handle_list(
         .with(
             Style::modern()
                 .off_horizontal()
-                .lines([(1, Style::modern().get_horizontal())]),
+                .horizontals([HorizontalLine::new(1, Style::modern().get_horizontal())]),
         )
         .with(Modify::new(Segment::all()).with(Alignment::center()))
         .to_string();
@@ -289,7 +290,7 @@ async fn handle_history(
         .with(
             Style::modern()
                 .off_horizontal()
-                .lines([(1, Style::modern().get_horizontal())]),
+                .horizontals([HorizontalLine::new(1, Style::modern().get_horizontal())]),
         )
         .with(Modify::new(Segment::all()).with(Alignment::center()))
         .to_string();

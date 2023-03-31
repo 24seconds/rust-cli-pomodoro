@@ -1,4 +1,5 @@
 use chrono::{prelude::*, Duration};
+use std::borrow::Cow;
 use tabled::Tabled;
 
 use crate::notification::Notification;
@@ -39,7 +40,7 @@ impl ArchivedNotification {
 impl Tabled for ArchivedNotification {
     const LENGTH: usize = 7;
 
-    fn fields(&self) -> Vec<String> {
+    fn fields(&self) -> Vec<Cow<'_, str>> {
         let id = self.id.to_string();
 
         let started_at = {
@@ -72,9 +73,12 @@ impl Tabled for ArchivedNotification {
             break_expired_at,
             description,
         ]
+        .into_iter()
+        .map(|x| x.into())
+        .collect()
     }
 
-    fn headers() -> Vec<String> {
+    fn headers() -> Vec<Cow<'static, str>> {
         vec![
             "id",
             "work_time",
@@ -85,7 +89,7 @@ impl Tabled for ArchivedNotification {
             "description",
         ]
         .into_iter()
-        .map(|x| x.to_string())
+        .map(|x| x.to_string().into())
         .collect()
     }
 }
