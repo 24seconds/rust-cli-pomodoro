@@ -5,5 +5,7 @@
   },
   "discord": {
       "webhook_url": "your-webhook-url"
-  }
+  },
+  "work_time_default_value": 30,
+  "break_time_default_value": 10
 }

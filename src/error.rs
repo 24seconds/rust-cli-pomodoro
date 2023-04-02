@@ -25,6 +25,7 @@ pub enum NotificationError {
     EmptyConfiguration,
     NewNotification(ParseError),
     DeletionFail(String),
+    EmptyTimeValues,
 }
 
 impl fmt::Display for NotificationError {
@@ -38,6 +39,10 @@ impl fmt::Display for NotificationError {
                 write!(f, "failed to get new notification: {}", e)
             }
             NotificationError::DeletionFail(msg) => write!(f, "{}", msg),
+            NotificationError::EmptyTimeValues => write!(
+                f,
+                "Cannot create a notification with 0 work time and 0 break time"
+            ),
         }
     }
 }
@@ -51,6 +56,7 @@ impl std::error::Error for NotificationError {
             NotificationError::EmptyConfiguration => None,
             NotificationError::NewNotification(ref e) => Some(e),
             NotificationError::DeletionFail(_) => None,
+            NotificationError::EmptyTimeValues => None,
         }
     }
 }
