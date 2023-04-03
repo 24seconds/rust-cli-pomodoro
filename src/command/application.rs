@@ -216,6 +216,14 @@ mod tests {
     }
 
     #[test]
+    fn test_delete_command() {
+        let cmd = get_main_command();
+        let matches = cmd.try_get_matches_from("d -a".split_whitespace());
+        println!("matches: {:?}", &matches);
+        assert!(matches.is_ok());
+    }
+
+    #[test]
     fn test_get_common_subcommands() {
         let subcommands = get_common_subcommands();
         assert_eq!(subcommands.len(), 6);
