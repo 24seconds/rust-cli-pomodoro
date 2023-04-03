@@ -101,6 +101,7 @@ fn get_common_subcommands() -> Vec<Command> {
                 Arg::new("all")
                     .help("The flag to delete all notifications")
                     .short('a')
+                    .num_args(0)
                     .long("all"),
             ),
         Command::new(ActionType::List)
@@ -213,6 +214,13 @@ mod tests {
     fn test_get_main_command() {
         let app = get_main_command();
         assert_eq!(app.get_name(), "pomodoro");
+    }
+
+    #[test]
+    fn test_delete_command() {
+        let cmd = get_main_command();
+        let matches = cmd.try_get_matches_from("d -a".split_whitespace());
+        assert!(matches.is_ok());
     }
 
     #[test]
