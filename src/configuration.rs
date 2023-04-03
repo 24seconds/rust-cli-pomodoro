@@ -56,11 +56,11 @@ impl Configuration {
     }
 
     pub fn get_work_time(&self) -> Option<u16> {
-        return self.work_time_default_value;
+        self.work_time_default_value
     }
 
     pub fn get_break_time(&self) -> Option<u16> {
-        return self.break_time_default_value;
+        self.break_time_default_value
     }
 }
 

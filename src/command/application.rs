@@ -1,4 +1,4 @@
-use clap::{Arg, ArgAction, ArgMatches, Command};
+use clap::{Arg, ArgMatches, Command};
 use std::sync::Arc;
 
 use crate::command::action::ActionType;
@@ -105,7 +105,13 @@ fn get_common_subcommands() -> Vec<Command> {
             ),
         Command::new(ActionType::List)
             .alias(LS)
-            .about("list notifications"),
+            .about("list notifications")
+            .arg(
+                Arg::new("percentage")
+                    .short('p')
+                    .help("show work time completion percentage")
+                    .num_args(0),
+            ),
         Command::new(ActionType::History).about("show archived notifications"),
         Command::new(ActionType::Test).about("test notification"),
     ]
@@ -142,7 +148,7 @@ If no configuration file is passed or the keys are not present, then 25 minutes 
                 .conflicts_with("break")
                 .short('d')
                 .long("default")
-                .action(ArgAction::SetTrue),
+                .num_args(0),
         )
 }
 
@@ -232,6 +238,26 @@ mod tests {
         let matches =
             add_args_for_create_subcommand(cmd).get_matches_from("myapp -d".split_whitespace());
 
+        assert!(matches.get_flag("default"));
+
+        // test work only
+        let cmd = Command::new("myapp");
+        let matches =
+            add_args_for_create_subcommand(cmd).get_matches_from("myapp -w 25".split_whitespace());
+        let work = matches.get_one::<String>("work").unwrap();
+        assert!(work.eq("25"));
+        assert!(matches.get_one::<String>("break").is_none());
+        assert_eq!(matches.get_flag("default"), false);
+        assert!(matches.contains_id("default"));
+
+        // test break only
+        let cmd = Command::new("myapp");
+        let matches =
+            add_args_for_create_subcommand(cmd).get_matches_from("myapp -b 10".split_whitespace());
+        let break_time = matches.get_one::<String>("break").unwrap();
+        assert!(break_time.eq("10"));
+        assert!(matches.get_one::<String>("work").is_none());
+        assert_eq!(matches.get_flag("default"), false);
         assert!(matches.contains_id("default"));
     }
 }

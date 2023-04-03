@@ -5,10 +5,11 @@ use std::process;
 use std::result;
 use std::str::SplitWhitespace;
 use std::sync::Arc;
+use tabled::locator::ByColumnName;
 use tabled::object::Segment;
 use tabled::style::HorizontalLine;
-use tabled::Alignment;
 use tabled::Modify;
+use tabled::{Alignment, Disable};
 use tabled::{Style, TableIteratorExt};
 
 use crate::command::output::{OutputAccumulater, OutputType};
@@ -83,7 +84,7 @@ pub async fn handle(
             )
             .await?;
         }
-        ActionType::List => handle_list(glue, &mut output_accumulator).await?,
+        ActionType::List => handle_list(sub_matches, glue, &mut output_accumulator).await?,
         ActionType::Test => handle_test(configuration, &mut output_accumulator).await?,
         ActionType::History => handle_history(glue, &mut output_accumulator).await?,
         ActionType::Exit => process::exit(0),
@@ -237,6 +238,7 @@ async fn handle_test(
 }
 
 async fn handle_list(
+    sub_matches: &ArgMatches,
     glue: &ArcGlue,
     output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
@@ -244,15 +246,23 @@ async fn handle_list(
     let notifications = db::list_notification(glue.clone()).await;
     debug!("Message::List done");
 
-    let table = notifications
-        .table()
+    let mut main_table = notifications.table();
+
+    let styled_table = main_table
         .with(
             Style::modern()
                 .off_horizontal()
                 .horizontals([HorizontalLine::new(1, Style::modern().get_horizontal())]),
         )
-        .with(Modify::new(Segment::all()).with(Alignment::center()))
-        .to_string();
+        .with(Modify::new(Segment::all()).with(Alignment::center()));
+
+    let table: String = if !sub_matches.get_flag("percentage") {
+        styled_table
+            .with(Disable::column(ByColumnName::new("percentage")))
+            .to_string()
+    } else {
+        styled_table.to_string()
+    };
 
     output_accumulator.push(OutputType::Info, format!("\n{}", table));
     output_accumulator.push(OutputType::Println, String::from("List succeed"));
