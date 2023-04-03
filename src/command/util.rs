@@ -7,7 +7,7 @@ use clap::ArgMatches;
 use clap_complete::Shell;
 
 pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), ParseError> {
-    let (work_time, break_time) = if matches.contains_id("default") {
+    let (work_time, break_time) = if matches.get_flag("default") {
         (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
     } else {
         let work_time = parse_arg::<u16>(matches, "work")?;

@@ -81,6 +81,25 @@ impl<'a> Notification {
         )
     }
 
+    pub fn get_work_percentage(&self, current_time: DateTime<Utc>) -> String {
+        // Check if the timer has started and contains some work_time
+        if self.work_expired_at > current_time && self.get_start_at() < current_time {
+            // do the calculation in seconds for better % accuracy
+            let work_time_seconds: i64 = self.work_time as i64 * 60;
+
+            let completed_time =
+                work_time_seconds - (self.work_expired_at - current_time).num_seconds();
+            (100 * completed_time) / work_time_seconds
+        } else if self.get_start_at() > current_time {
+            // work_time hasn't started yet = 0% of work that has been done
+            0
+        } else {
+            // no work_time = 100% work done
+            100
+        }
+        .to_string()
+    }
+
     pub fn convert_to_notification(row: Row) -> Self {
         let id = match row.get_value_by_index(0).unwrap() {
             Value::I64(id) => *id as u16,
@@ -144,7 +163,7 @@ impl<'a> Notification {
 }
 
 impl Tabled for Notification {
-    const LENGTH: usize = 7;
+    const LENGTH: usize = 8;
 
     fn fields(&self) -> Vec<Cow<'_, str>> {
         let utc = Utc::now();
@@ -202,6 +221,8 @@ impl Tabled for Notification {
             String::from("N/A")
         };
 
+        let work_percentage = self.get_work_percentage(utc);
+
         vec![
             id,
             work_remaining,
@@ -210,6 +231,7 @@ impl Tabled for Notification {
             work_expired_at,
             break_expired_at,
             description,
+            work_percentage,
         ]
         .into_iter()
         .map(|x| x.into())
@@ -225,6 +247,7 @@ impl Tabled for Notification {
             "expired_at (work)",
             "expired_at (break)",
             "description",
+            "percentage",
         ]
         .into_iter()
         .map(|x| x.to_string().into())
@@ -315,7 +338,7 @@ mod tests {
     use std::path::PathBuf;
     use std::sync::Arc;
 
-    use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+    use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
     use clap::Command;
     use gluesql::core::data::Value;
     use tabled::Tabled;
@@ -400,10 +423,10 @@ mod tests {
         let notification = Notification::new(0, 25, 5, now);
 
         let fields = notification.fields();
-        assert_eq!(7, fields.len());
+        assert_eq!(8, fields.len());
 
         let headers = Notification::headers();
-        assert_eq!(7, headers.len());
+        assert_eq!(8, headers.len());
         assert_eq!(
             vec![
                 "id".to_string(),
@@ -413,6 +436,7 @@ mod tests {
                 "expired_at (work)".to_string(),
                 "expired_at (break)".to_string(),
                 "description".to_string(),
+                "percentage".to_string(),
             ],
             headers
         );
@@ -652,5 +676,92 @@ mod tests {
             get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration));
 
         assert!(notification.is_err());
+    }
+
+    #[test]
+    fn test_work_percentage() {
+        let current_time = {
+            let date = NaiveDate::from_ymd(2022, 3, 27);
+            let time = NaiveTime::from_hms_milli(16, 10, 00, 00);
+            Utc.from_local_datetime(&NaiveDateTime::new(date, time))
+                .unwrap()
+        };
+
+        // notification has some work time. 20 minutes work remaining
+        let notification_1 = {
+            let date = NaiveDate::from_ymd(2022, 3, 27);
+            let time = NaiveTime::from_hms_milli(16, 05, 00, 00);
+
+            let naive_date_time = NaiveDateTime::new(date, time);
+            let row = vec![
+                Value::I64(0),
+                Value::Str("sample".to_string()),
+                Value::I64(25),
+                Value::I64(5),
+                Value::Timestamp(naive_date_time),
+                Value::Timestamp(naive_date_time + Duration::minutes(25)),
+                Value::Timestamp(naive_date_time + Duration::minutes(30)),
+            ]
+            .into();
+
+            Notification::convert_to_notification(row)
+        };
+
+        // notification has no work time
+        let notification_2 = {
+            let date = NaiveDate::from_ymd(2022, 3, 27);
+            let time = NaiveTime::from_hms_milli(15, 30, 00, 00);
+
+            let naive_date_time = NaiveDateTime::new(date, time);
+            let row = vec![
+                Value::I64(0),
+                Value::Str("sample".to_string()),
+                Value::I64(25),
+                Value::I64(5),
+                Value::Timestamp(naive_date_time),
+                Value::Timestamp(naive_date_time + Duration::minutes(25)),
+                Value::Timestamp(naive_date_time + Duration::minutes(30)),
+            ]
+            .into();
+
+            Notification::convert_to_notification(row)
+        };
+
+        // notification time hasn't started yet
+        let notification_3 = {
+            let date = NaiveDate::from_ymd(2022, 3, 27);
+            let time = NaiveTime::from_hms_milli(16, 40, 00, 00);
+
+            let naive_date_time = NaiveDateTime::new(date, time);
+            let row = vec![
+                Value::I64(0),
+                Value::Str("sample".to_string()),
+                Value::I64(25),
+                Value::I64(5),
+                Value::Timestamp(naive_date_time),
+                Value::Timestamp(naive_date_time + Duration::minutes(25)),
+                Value::Timestamp(naive_date_time + Duration::minutes(30)),
+            ]
+            .into();
+
+            Notification::convert_to_notification(row)
+        };
+
+        let expected_value_1 = "20";
+        let expected_value_2 = "100";
+        let expected_value_3 = "0";
+
+        assert_eq!(
+            notification_1.get_work_percentage(current_time),
+            expected_value_1
+        );
+        assert_eq!(
+            notification_2.get_work_percentage(current_time),
+            expected_value_2
+        );
+        assert_eq!(
+            notification_3.get_work_percentage(current_time),
+            expected_value_3
+        );
     }
 }

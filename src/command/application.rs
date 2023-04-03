@@ -1,4 +1,4 @@
-use clap::{Arg, ArgAction, ArgMatches, Command};
+use clap::{Arg, ArgMatches, Command};
 use std::sync::Arc;
 
 use crate::command::action::ActionType;
@@ -105,7 +105,13 @@ fn get_common_subcommands() -> Vec<Command> {
             ),
         Command::new(ActionType::List)
             .alias(LS)
-            .about("list notifications"),
+            .about("list notifications")
+            .arg(
+                Arg::new("percentage")
+                    .short('p')
+                    .help("show work time completion percentage")
+                    .num_args(0),
+            ),
         Command::new(ActionType::History).about("show archived notifications"),
         Command::new(ActionType::Test).about("test notification"),
     ]
@@ -142,7 +148,7 @@ If no configuration file is passed or the keys are not present, then 25 minutes 
                 .conflicts_with("break")
                 .short('d')
                 .long("default")
-                .action(ArgAction::SetTrue),
+                .num_args(0),
         )
 }
 
@@ -232,6 +238,6 @@ mod tests {
         let matches =
             add_args_for_create_subcommand(cmd).get_matches_from("myapp -d".split_whitespace());
 
-        assert!(matches.contains_id("default"));
+        assert!(matches.get_flag("default"));
     }
 }
