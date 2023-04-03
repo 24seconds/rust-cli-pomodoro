@@ -239,5 +239,25 @@ mod tests {
             add_args_for_create_subcommand(cmd).get_matches_from("myapp -d".split_whitespace());
 
         assert!(matches.get_flag("default"));
+
+        // test work only
+        let cmd = Command::new("myapp");
+        let matches =
+            add_args_for_create_subcommand(cmd).get_matches_from("myapp -w 25".split_whitespace());
+        let work = matches.get_one::<String>("work").unwrap();
+        assert!(work.eq("25"));
+        assert!(matches.get_one::<String>("break").is_none());
+        assert_eq!(matches.get_flag("default"), false);
+        assert!(matches.contains_id("default"));
+
+        // test break only
+        let cmd = Command::new("myapp");
+        let matches =
+            add_args_for_create_subcommand(cmd).get_matches_from("myapp -b 10".split_whitespace());
+        let break_time = matches.get_one::<String>("break").unwrap();
+        assert!(break_time.eq("10"));
+        assert!(matches.get_one::<String>("work").is_none());
+        assert_eq!(matches.get_flag("default"), false);
+        assert!(matches.contains_id("default"));
     }
 }
