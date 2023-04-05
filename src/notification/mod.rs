@@ -338,6 +338,7 @@ mod tests {
     use std::path::PathBuf;
     use std::sync::Arc;
 
+    use chrono::DateTime;
     use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
     use clap::Command;
     use gluesql::core::data::Value;
@@ -482,6 +483,57 @@ mod tests {
         assert_eq!(25, wt);
         assert_eq!(5, bt);
         assert_eq!(now, created_at);
+    }
+
+    #[test]
+    fn test_create_notifications() {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("resources/test/mock_configuration.json");
+        let path_str = path.to_str().unwrap();
+
+        let (configuration, _) = load_configuration(Some(path_str)).unwrap();
+        let mut id_manager = 0;
+        let now = Utc::now();
+
+        struct TestCase<'a> {
+            desc: &'static str,
+            command: &'static str,
+            expected_work_time: u16,
+            expected_break_time: u16,
+            expected_created_at: &'a DateTime<Utc>,
+        }
+
+        let test_cases: Vec<TestCase> = vec![TestCase {
+            desc: "default flags with configuration",
+            command: "myapp --default",
+            expected_work_time: 30,
+            expected_break_time: 10,
+            expected_created_at: &now,
+        }];
+
+        for (idx, tc) in test_cases.iter().enumerate() {
+            let cmd = Command::new("myapp");
+            let matches =
+                add_args_for_create_subcommand(cmd).get_matches_from(tc.command.split_whitespace());
+
+            let notification = get_new_notification(
+                &matches,
+                &mut id_manager,
+                now.clone(),
+                Arc::new(configuration.clone()),
+            )
+            .unwrap();
+
+            let (id, _, work_time, break_time, created_at, _, _) = notification.get_values();
+            assert_eq!(idx as u16, id, "Test case: {}", tc.desc);
+            assert_eq!(tc.expected_work_time, work_time, "Test case: {}", tc.desc);
+            assert_eq!(tc.expected_break_time, break_time, "Test case: {}", tc.desc);
+            assert_eq!(
+                tc.expected_created_at, &created_at,
+                "Test case: {}",
+                tc.desc
+            );
+        }
     }
 
     #[test]
