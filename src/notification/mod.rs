@@ -338,6 +338,7 @@ mod tests {
     use std::path::PathBuf;
     use std::sync::Arc;
 
+    use chrono::DateTime;
     use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
     use clap::Command;
     use gluesql::core::data::Value;
@@ -441,241 +442,170 @@ mod tests {
             headers
         );
     }
-
     #[test]
-    fn test_create_new_notification_with_default_flag() {
-        let cmd = Command::new("myapp");
-        let matches = add_args_for_create_subcommand(cmd)
-            .get_matches_from("myapp --default".split_whitespace());
+    fn test_create_notifications() {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("resources/test/mock_configuration.json");
+        let path_str = path.to_str().unwrap();
+
+        let (mock_configuration, _) = load_configuration(Some(path_str)).unwrap();
+        let (empty_configuration, _) =
+            load_configuration(Some("this_path_does_not_exist")).unwrap();
+
         let mut id_manager = 0;
         let now = Utc::now();
 
-        //With configuration file
+        struct TestCase<'a> {
+            desc: &'static str,
+            command: &'static str,
+            use_mock_configuration: bool,
+            expect_notification_error: bool,
+            expected_work_time: u16,
+            expected_break_time: u16,
+            expected_created_at: &'a DateTime<Utc>,
+        }
 
-        let (configuration, _) = load_configuration(Some(
-            PathBuf::from(
-                env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json",
-            )
-            .to_str()
-            .unwrap(),
-        ))
-        .unwrap();
+        let test_cases: Vec<TestCase> = vec![
+            TestCase {
+                desc: "default flags with configuration",
+                command: "myapp --default",
+                use_mock_configuration: true,
+                expect_notification_error: false,
+                expected_work_time: 30,
+                expected_break_time: 10,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "default flags without configuration",
+                command: "myapp --default",
+                use_mock_configuration: false,
+                expect_notification_error: false,
+                expected_work_time: 25,
+                expected_break_time: 5,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "no flags with configuration",
+                command: "myapp",
+                use_mock_configuration: true,
+                expect_notification_error: false,
+                expected_work_time: 30,
+                expected_break_time: 10,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "no flags without configuration",
+                command: "myapp",
+                use_mock_configuration: false,
+                expect_notification_error: false,
+                expected_work_time: 25,
+                expected_break_time: 5,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "both work and break flag specified with configuration",
+                command: "myapp -w 50 -b 25",
+                use_mock_configuration: true,
+                expect_notification_error: false,
+                expected_work_time: 50,
+                expected_break_time: 25,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "only work flag specified with configuration",
+                command: "myapp -w 50",
+                use_mock_configuration: true,
+                expect_notification_error: false,
+                expected_work_time: 50,
+                expected_break_time: 10,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "only break flag specified with configuration",
+                command: "myapp -b 25",
+                use_mock_configuration: true,
+                expect_notification_error: false,
+                expected_work_time: 30,
+                expected_break_time: 25,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "both work and break flag specified without configuration",
+                command: "myapp -w 50 -b 25",
+                use_mock_configuration: false,
+                expect_notification_error: false,
+                expected_work_time: 50,
+                expected_break_time: 25,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "only work flag specified without configuration",
+                command: "myapp -w 50",
+                use_mock_configuration: false,
+                expect_notification_error: false,
+                expected_work_time: 50,
+                expected_break_time: 5,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "only break flag specified without configuration",
+                command: "myapp -b 25",
+                use_mock_configuration: false,
+                expect_notification_error: false,
+                expected_work_time: 25,
+                expected_break_time: 25,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "both work and break are specified as zero with configuration",
+                command: "myapp -w 0 -b 0",
+                use_mock_configuration: true,
+                expect_notification_error: true,
+                expected_work_time: 0,
+                expected_break_time: 0,
+                expected_created_at: &now,
+            },
+            TestCase {
+                desc: "both work and break are specified as zero without configuration",
+                command: "myapp -w 0 -b 0",
+                use_mock_configuration: false,
+                expect_notification_error: true,
+                expected_work_time: 0,
+                expected_break_time: 0,
+                expected_created_at: &now,
+            },
+        ];
 
-        let notification =
-            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap();
+        for (idx, tc) in test_cases.iter().enumerate() {
+            let cmd = Command::new("myapp");
+            let matches =
+                add_args_for_create_subcommand(cmd).get_matches_from(tc.command.split_whitespace());
 
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(0, id);
-        assert_eq!(30, wt);
-        assert_eq!(10, bt);
-        assert_eq!(now, created_at);
+            let configuration = if tc.use_mock_configuration {
+                Arc::new(mock_configuration.clone())
+            } else {
+                Arc::new(empty_configuration.clone())
+            };
 
-        //without configuration file
+            let notification =
+                get_new_notification(&matches, &mut id_manager, now.clone(), configuration);
 
-        let (configuration, _) = load_configuration(Some("this_path_does_not_exist")).unwrap();
+            if tc.expect_notification_error {
+                assert!(notification.is_err(), "Test case: {}", tc.desc);
+                continue;
+            }
 
-        let notification =
-            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap();
-
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(1, id);
-        assert_eq!(25, wt);
-        assert_eq!(5, bt);
-        assert_eq!(now, created_at);
-    }
-
-    #[test]
-    fn test_create_new_notification_with_no_flag() {
-        let cmd = Command::new("myapp");
-        let matches =
-            add_args_for_create_subcommand(cmd).get_matches_from("myapp".split_whitespace());
-        let mut id_manager = 0;
-        let now = Utc::now();
-
-        //with configuration file
-
-        let (configuration, _) = load_configuration(Some(
-            PathBuf::from(
-                env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json",
-            )
-            .to_str()
-            .unwrap(),
-        ))
-        .unwrap();
-
-        let notification =
-            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap();
-
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(0, id);
-        assert_eq!(30, wt);
-        assert_eq!(10, bt);
-        assert_eq!(now, created_at);
-
-        //without configuration file
-
-        let (configuration, _) = load_configuration(Some("this_path_does_not_exist")).unwrap();
-
-        let notification =
-            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap();
-
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(1, id);
-        assert_eq!(25, wt);
-        assert_eq!(5, bt);
-        assert_eq!(now, created_at);
-    }
-
-    #[test]
-    fn test_create_new_notification_with_flags() {
-        let cmd = Command::new("myapp");
-        let now = Utc::now();
-        let mut id_manager = 0;
-
-        //with configuration file
-        let (configuration, _) = load_configuration(Some(
-            PathBuf::from(
-                env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json",
-            )
-            .to_str()
-            .unwrap(),
-        ))
-        .unwrap();
-
-        // -w x -b y
-        let matches = add_args_for_create_subcommand(cmd.clone())
-            .get_matches_from("myapp -w 50 -b 25".split_whitespace());
-
-        let notification = get_new_notification(
-            &matches,
-            &mut id_manager,
-            now,
-            Arc::new(configuration.clone()),
-        )
-        .unwrap();
-
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(0, id);
-        assert_eq!(50, wt);
-        assert_eq!(25, bt);
-        assert_eq!(now, created_at);
-
-        // -w x
-        let matches = add_args_for_create_subcommand(cmd.clone())
-            .get_matches_from("myapp -w 50".split_whitespace());
-
-        let notification = get_new_notification(
-            &matches,
-            &mut id_manager,
-            now,
-            Arc::new(configuration.clone()),
-        )
-        .unwrap();
-
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(1, id);
-        assert_eq!(50, wt);
-        assert_eq!(10, bt);
-        assert_eq!(now, created_at);
-
-        // -b y
-        let matches = add_args_for_create_subcommand(cmd.clone())
-            .get_matches_from("myapp -b 25".split_whitespace());
-
-        let notification =
-            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap();
-
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(2, id);
-        assert_eq!(30, wt);
-        assert_eq!(25, bt);
-        assert_eq!(now, created_at);
-
-        //without configuration file
-        let (configuration, _) = load_configuration(Some("this_path_does_not_exist")).unwrap();
-
-        // -w x -b y
-        let matches = add_args_for_create_subcommand(cmd.clone())
-            .get_matches_from("myapp -w 50 -b 25".split_whitespace());
-
-        let notification = get_new_notification(
-            &matches,
-            &mut id_manager,
-            now,
-            Arc::new(configuration.clone()),
-        )
-        .unwrap();
-
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(3, id);
-        assert_eq!(50, wt);
-        assert_eq!(25, bt);
-        assert_eq!(now, created_at);
-
-        // -w x
-        let matches = add_args_for_create_subcommand(cmd.clone())
-            .get_matches_from("myapp -w 50".split_whitespace());
-
-        let notification = get_new_notification(
-            &matches,
-            &mut id_manager,
-            now,
-            Arc::new(configuration.clone()),
-        )
-        .unwrap();
-
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(4, id);
-        assert_eq!(50, wt);
-        assert_eq!(5, bt);
-        assert_eq!(now, created_at);
-
-        // -b y
-        let matches =
-            add_args_for_create_subcommand(cmd).get_matches_from("myapp -b 25".split_whitespace());
-
-        let notification =
-            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration)).unwrap();
-
-        let (id, _, wt, bt, created_at, _, _) = notification.get_values();
-        assert_eq!(5, id);
-        assert_eq!(25, wt);
-        assert_eq!(25, bt);
-        assert_eq!(now, created_at);
-    }
-
-    #[test]
-    fn test_empty_time_values() {
-        let cmd = Command::new("myapp");
-        let matches = add_args_for_create_subcommand(cmd)
-            .get_matches_from("myapp -w 0 -b 0".split_whitespace());
-        let mut id_manager = 0;
-        let now = Utc::now();
-
-        //With configuration file
-
-        let (configuration, _) = load_configuration(Some(
-            PathBuf::from(
-                env!("CARGO_MANIFEST_DIR").to_owned() + "/resources/test/mock_configuration.json",
-            )
-            .to_str()
-            .unwrap(),
-        ))
-        .unwrap();
-
-        let notification =
-            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration));
-
-        assert!(notification.is_err());
-
-        //without configuration file
-
-        let (configuration, _) = load_configuration(Some("this_path_does_not_exist")).unwrap();
-
-        let notification =
-            get_new_notification(&matches, &mut id_manager, now, Arc::new(configuration));
-
-        assert!(notification.is_err());
+            let (id, _, work_time, break_time, created_at, _, _) =
+                notification.unwrap().get_values();
+            assert_eq!(idx as u16, id, "Test case: {}", tc.desc);
+            assert_eq!(tc.expected_work_time, work_time, "Test case: {}", tc.desc);
+            assert_eq!(tc.expected_break_time, break_time, "Test case: {}", tc.desc);
+            assert_eq!(
+                tc.expected_created_at, &created_at,
+                "Test case: {}",
+                tc.desc
+            );
+        }
     }
 
     #[test]
