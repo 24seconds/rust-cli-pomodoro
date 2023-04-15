@@ -1,2 +1,4 @@
 /target
 credential.json
+# auto completion script
+_pomodoro

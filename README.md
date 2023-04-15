@@ -1,13 +1,25 @@
 # ⏱️⌛ rust-cli-pomodoro
 
 ## [Table of Contents](#table-of-Contents)
-- [Demo](#demo)
-- [💡 Motivation](#motivation)
-- [👷🏻‍♀️ Architecture](#architecture)
-- [📜 Features](#features)
-- [⌛ Installation & How to use](#installation-and-how-to-use)
-- [🚧 RoadMap](#roadmap)
-- [🖥️ Compatibility](#compatibility)
+- [⏱️⌛ rust-cli-pomodoro](#️-rust-cli-pomodoro)
+  - [Table of Contents](#table-of-contents)
+  - [Demo](#demo)
+  - [Motivation](#motivation)
+  - [Architecture](#architecture)
+  - [Features](#features)
+    - [Start up \& IPC command](#start-up--ipc-command)
+    - [Standard input command](#standard-input-command)
+  - [Installation and How to use](#installation-and-how-to-use)
+    - [Installation](#installation)
+    - [Using configuration.json](#using-configurationjson)
+    - [Auto completion](#auto-completion)
+      - [Step 1. Generate completion script file using command](#step-1-generate-completion-script-file-using-command)
+      - [Step 2. Put the completion script file to proper path](#step-2-put-the-completion-script-file-to-proper-path)
+      - [Step 3. rerun the zsh shell and enjoy!](#step-3-rerun-the-zsh-shell-and-enjoy)
+  - [RoadMap](#roadmap)
+  - [Compatibility](#compatibility)
+    - [Start up \& Standard input](#start-up--standard-input)
+    - [IPC](#ipc)
 
 
 ## Demo
@@ -29,13 +41,17 @@ Pomodoro supports two input types, standard input and IPC (via unix domain socke
 
 Currently pomodoro provide the features listed as below. for more features, run `pomodoro` and type `help`!
 - Create notification with customized work and break time
+- When configuration file is given, notification is created with default values specified in the file
 - Queue the notification. Queued notification will start to run after previously registered notifications are finished
-- Customize notification delivery channels. Refer [Using credential.json section](#Using-credential.json)
+- Customize notification delivery channels. Refer [Using configuration.json section](#Using-configuration.json)
 - Pretty print created notifications using `list` command
 - Delete registered notification(s)
-- Track delete notification(s) using `history` command
+- Track archived notification(s) using `history` command
+- Delete archived notifications using `history --clear` command
 - Clear terminal
+- Support command history look up with arrow key in interaction mode.
 (A `notification` is consisted of work time and break time. Pomodoro manages timer using `notification`.)
+- Generate auto completion script for several shells (fish, zsh, bash, elvish, powershell)
 
 
 Depend on the input types, command is provided slightly differently. 
@@ -46,27 +62,27 @@ Or if you want to send command to already started up pomodoro (via IPC), run the
 
 
 ```md
-pomodoro 1.2.0-beta.0
+pomodoro 1.4.0
 Young
 start up application with config or run command using uds client
 
-USAGE:
-    pomodoro [OPTIONS]
-    pomodoro <SUBCOMMAND>
+Usage: pomodoro [OPTIONS]
+       pomodoro <COMMAND>
 
-OPTIONS:
-    -c, --config <FILE>    read credential json file from this path
-    -h, --help             Print help information
-    -V, --version          Print version information
+Commands:
+  create      create the notification
+  queue       create the notification
+  delete      delete a notification
+  list        list notifications
+  history     show archived notifications
+  test        test notification
+  completion  generate completions for shells
+  help        Print this message or the help of the given subcommand(s)
 
-SUBCOMMANDS:
-    create     create the notification
-    delete     delete a notification
-    help       Print this message or the help of the given subcommand(s)
-    history    show archived notifications
-    list       list notifications
-    queue      create the notification
-    test       test notification
+Options:
+  -c, --config <config>  Read configuration json file from this path
+  -h, --help             Print help
+  -V, --version          Print version
 ```
 
 
@@ -77,27 +93,26 @@ While pomodoro is running, you can interactively make command.
 
 
 ```md
-pomodoro 1.2.0-beta.0
+pomodoro 1.4.0
 Young
 manage your time!
 
-USAGE:
-    pomodoro [SUBCOMMAND]
+Usage: pomodoro [COMMAND]
 
-OPTIONS:
-    -h, --help       Print help information
-    -V, --version    Print version information
+Commands:
+  create   create the notification
+  queue    create the notification
+  delete   delete a notification
+  list     list notifications
+  history  show archived notifications
+  test     test notification
+  clear    clear terminal
+  exit     exit pomodoro app
+  help     Print this message or the help of the given subcommand(s)
 
-SUBCOMMANDS:
-    clear      clear terminal
-    create     create the notification
-    delete     delete a notification
-    exit       exit pomodoro app
-    help       Print this message or the help of the given subcommand(s)
-    history    show archived notifications
-    list       list notifications
-    queue      create the notification
-    test       test notification
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
 ```
 
 
@@ -117,10 +132,15 @@ cargo run --release
 cargo install rust-cli-pomodoro
 ```
 
-### Using credential.json
-pomodoro support slack notification.
-To use it, you need to create `credential.json` file in somewhere in your local machine. `credential.json` supports two keys, `slack` and `discord`.
-The `slack` and `discord` value is json. It looks like this
+### Using configuration.json
+pomodoro supports several configurations.
+- slack notification
+- discord notification
+- work time default value
+- break time default value
+
+To use it, you need to create json file, for exmplae `configuration.json` in somewhere in your local machine.
+`Configuration.json` file looks like below.
 
 ```json
 {
@@ -130,23 +150,70 @@ The `slack` and `discord` value is json. It looks like this
   },
   "discord": {
       "webhook_url": "your-webhook-url"
-  }
+  },
+  "work_time_default_value": 30,
+  "break_time_default_value": 10
 }
 ```
 
 For the slack notification, It uses [chat.PostMessage API](https://api.slack.com/methods/chat.postMessage)
 
-To run pomodoro with `credential.json`, run the app like this.
+For the discord notification, It uses [webhook url](https://discord.com/developers/docs/resources/webhook)
+
+To run pomodoro with `configuration.json`, run the app like this.
 ```sh
-# If the credential.json file exists in the current path
-pomodoro --config ./credential.json
+# If the configuration.json file exists in the current path
+pomodoro --config ./configuration.json
 ```
 
+### Auto completion
+`rust-cli-pomodoro` supports auto completion. But you need to generate the completion script manually and put it to the proper path.
+
+Auto completion is tab completion. When you typed a few character and press tab, then you can see the possible commands like this.
+
+<img src="assets/auto_completion_example.png">
+
+
+#### Step 1. Generate completion script file using command
+You need to run the command to get completion script. The command looks like below.  
+
+```sh
+Usage: pomodoro completion [shell]
+
+Arguments:
+  [shell]  [possible values: fish, zsh, bash, elvish, powershell]
+```
+
+For example, if you run `pomodoro completion zsh` then the script will be printed through standard output. Therefore, you need to do like this.  
+```sh
+$ pomodoro completion zsh > _pomodoro
+```
+The file name should be underscord + binary name, which is `_pomodoro`.
+
+#### Step 2. Put the completion script file to proper path
+Put the completion script file to proper path. For example, in zsh shell, the proper path is one of `$fpath`. You can check by running this command.  
+
+```sh
+> echo $fpath
+```
+
+In my case, I put the completion script under `/Users/young/.oh-my-zsh/completions`.  
+
+#### Step 3. rerun the zsh shell and enjoy!
+To use the auto completion, you need to run this command for opened terminals. For the newly opened terminals, auto completion will work without problem.
+
+```sh
+$ exec zsh
+# or
+$ source ~/.zshrc
+```
+
+Enjoy!
 
 ## RoadMap
 
-- [ ] Run previous command if needed
-- [ ] Command auto completion
+- [x] Run previous command if needed
+- [x] Command auto completion
 - [ ] Write integration tests
 - [ ] More rich notification: sound, app icon, hint, action etc
 - [ ] Provide more notification delivery option: Currently pomodoro uses desktop notification. But notification could be delivered through slack, email or any kind of method.
@@ -155,7 +222,7 @@ pomodoro --config ./credential.json
     - what else?
 - [ ] Provide an easy way to use this app (brew, snap, cargo install, etc..)
     - [x] cargo install
-
+- [ ] What else?
 
 ------
 
