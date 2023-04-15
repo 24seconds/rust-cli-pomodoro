@@ -27,7 +27,7 @@ pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleUdsResul
         ActionType::Create => handle_create(socket, sub_matches).await?,
         ActionType::Queue => handle_queue(socket, sub_matches).await?,
         ActionType::Delete => handle_delete(socket, sub_matches).await?,
-        ActionType::List => handle_list(socket).await?,
+        ActionType::List => handle_list(socket, sub_matches).await?,
         ActionType::Test => handle_test(socket).await?,
         ActionType::History => handle_history(socket).await?,
         ActionType::Exit | ActionType::Clear => {
@@ -108,10 +108,14 @@ async fn handle_delete(socket: UnixDatagram, sub_matches: &ArgMatches) -> Handle
     Ok(())
 }
 
-async fn handle_list(socket: UnixDatagram) -> HandleUdsResult {
+async fn handle_list(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
+    let show_percentage = sub_matches.get_flag("percentage");
+    
     socket
         .send(
-            UdsMessage::Public(MessageRequest::List)
+            UdsMessage::Public(MessageRequest::List {
+                show_percentage,
+            })
                 .encode()
                 .map_err(UdsHandlerError::EncodeFailed)?
                 .as_slice(),

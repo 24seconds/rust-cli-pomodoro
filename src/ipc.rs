@@ -62,7 +62,7 @@ pub enum MessageRequest {
     Create { work: u16, r#break: u16 },
     Queue { work: u16, r#break: u16 },
     Delete { id: u16, all: bool },
-    List,
+    List { show_percentage: bool },
     Test,
     History,
 }
@@ -97,7 +97,13 @@ impl From<MessageRequest> for UserInput {
                     format!("{} -i {}", String::from(ActionType::Delete), id)
                 }
             }
-            MessageRequest::List => String::from(ActionType::List),
+            MessageRequest::List { show_percentage } => {
+                if show_percentage {
+                    format!("{} -p", String::from(ActionType::List))
+                } else {
+                    String::from(ActionType::List)
+                }
+            },
             MessageRequest::Test => String::from(ActionType::Test),
             MessageRequest::History => String::from(ActionType::History),
         };
