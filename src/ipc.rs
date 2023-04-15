@@ -103,7 +103,7 @@ impl From<MessageRequest> for UserInput {
                 } else {
                     String::from(ActionType::List)
                 }
-            },
+            }
             MessageRequest::Test => String::from(ActionType::Test),
             MessageRequest::History => String::from(ActionType::History),
         };

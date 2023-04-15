@@ -110,12 +110,10 @@ async fn handle_delete(socket: UnixDatagram, sub_matches: &ArgMatches) -> Handle
 
 async fn handle_list(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
     let show_percentage = sub_matches.get_flag("percentage");
-    
+
     socket
         .send(
-            UdsMessage::Public(MessageRequest::List {
-                show_percentage,
-            })
+            UdsMessage::Public(MessageRequest::List { show_percentage })
                 .encode()
                 .map_err(UdsHandlerError::EncodeFailed)?
                 .as_slice(),
