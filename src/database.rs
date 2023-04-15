@@ -243,6 +243,19 @@ pub async fn archive_all_notification(glue: ArcGlue) {
     debug!("output: {:?}", output);
 }
 
+pub async fn delete_all_archived_notification(glue: ArcGlue) {
+    let mut glue = glue.lock().unwrap();
+
+    let sql = r#"
+    DELETE FROM archived_notifications;
+    "#;
+
+    debug!("delete all sql: {}", sql);
+
+    let output = glue.execute(sql).unwrap();
+    debug!("output: {:?}", output);
+}
+
 pub async fn delete_all_notification(glue: ArcGlue) {
     let mut glue = glue.lock().unwrap();
 
@@ -266,9 +279,9 @@ mod tests {
 
     use super::{
         archive_all_notification, archive_notification, create_notification,
-        delete_all_notification, delete_notification, get_memory_glue, initialize,
-        list_archived_notification, list_notification, read_last_expired_notification,
-        read_notification,
+        delete_all_archived_notification, delete_all_notification, delete_notification,
+        get_memory_glue, initialize, list_archived_notification, list_notification,
+        read_last_expired_notification, read_notification,
     };
     use std::{
         panic,
@@ -413,6 +426,26 @@ mod tests {
 
         let result = list_archived_notification(glue.clone()).await;
         assert!(result.len() == 1);
+    }
+
+    #[tokio::test]
+    async fn test_delete_all_archived_notification() {
+        let glue = Arc::new(Mutex::new(get_memory_glue()));
+        initialize(glue.clone()).await;
+
+        let now = Utc::now();
+        let notification = Notification::new(0, 25, 5, now);
+        create_notification(glue.clone(), &notification).await;
+
+        archive_notification(glue.clone(), 0).await;
+
+        let result = list_archived_notification(glue.clone()).await;
+        assert!(result.len() == 1);
+
+        delete_all_archived_notification(glue.clone()).await;
+
+        let result = list_archived_notification(glue.clone()).await;
+        assert!(result.len() == 0);
     }
 
     #[tokio::test]

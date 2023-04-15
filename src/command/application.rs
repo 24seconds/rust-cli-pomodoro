@@ -113,7 +113,15 @@ fn get_common_subcommands() -> Vec<Command> {
                     .help("show work time completion percentage")
                     .num_args(0),
             ),
-        Command::new(ActionType::History).about("show archived notifications"),
+        Command::new(ActionType::History)
+            .about("show archived notifications")
+            .arg(
+                Arg::new("clear")
+                    .help("The flag to delete all notifications from history")
+                    .short('c')
+                    .num_args(0)
+                    .long("clear"),
+            ),
         Command::new(ActionType::Test).about("test notification"),
     ]
 }

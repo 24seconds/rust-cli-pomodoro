@@ -86,7 +86,7 @@ pub async fn handle(
         }
         ActionType::List => handle_list(sub_matches, glue, &mut output_accumulator).await?,
         ActionType::Test => handle_test(configuration, &mut output_accumulator).await?,
-        ActionType::History => handle_history(glue, &mut output_accumulator).await?,
+        ActionType::History => handle_history(sub_matches, glue, &mut output_accumulator).await?,
         ActionType::Exit => process::exit(0),
         ActionType::Clear => print!("\x1B[2J\x1B[1;1H"),
     }
@@ -271,24 +271,35 @@ async fn handle_list(
 }
 
 async fn handle_history(
+    sub_matches: &ArgMatches,
     glue: &ArcGlue,
     output_accumulator: &mut OutputAccumulater,
 ) -> HandleUserInputResult {
-    debug!("Message:History called!");
-    let archived_notifications = db::list_archived_notification(glue.clone()).await;
-    debug!("Message:History done!");
+    if sub_matches.get_flag("clear") {
+        debug!("Message:Clear history called!");
+        db::delete_all_archived_notification(glue.clone()).await;
+        output_accumulator.push(
+            OutputType::Println,
+            String::from("All Notifications history deleted"),
+        );
+        debug!("Message::Clear history done");
+    } else {
+        debug!("Message:History called!");
+        let archived_notifications = db::list_archived_notification(glue.clone()).await;
+        debug!("Message:History done!");
 
-    let table = archived_notifications
-        .table()
-        .with(
-            Style::modern()
-                .off_horizontal()
-                .horizontals([HorizontalLine::new(1, Style::modern().get_horizontal())]),
-        )
-        .with(Modify::new(Segment::all()).with(Alignment::center()))
-        .to_string();
-    output_accumulator.push(OutputType::Info, format!("\n{}", table));
-    output_accumulator.push(OutputType::Println, String::from("History succeed"));
+        let table = archived_notifications
+            .table()
+            .with(
+                Style::modern()
+                    .off_horizontal()
+                    .horizontals([HorizontalLine::new(1, Style::modern().get_horizontal())]),
+            )
+            .with(Modify::new(Segment::all()).with(Alignment::center()))
+            .to_string();
+        output_accumulator.push(OutputType::Info, format!("\n{}", table));
+        output_accumulator.push(OutputType::Println, String::from("History succeed"));
+    }
 
     Ok(())
 }
