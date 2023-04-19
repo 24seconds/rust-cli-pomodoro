@@ -29,7 +29,7 @@ pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleUdsResul
         ActionType::Delete => handle_delete(socket, sub_matches).await?,
         ActionType::List => handle_list(socket, sub_matches).await?,
         ActionType::Test => handle_test(socket).await?,
-        ActionType::History => handle_history(socket).await?,
+        ActionType::History => handle_history(socket, sub_matches).await?,
         ActionType::Exit | ActionType::Clear => {
             info!("Exit or Clear is not supported action for unix domain client")
         }
@@ -142,10 +142,12 @@ async fn handle_test(socket: UnixDatagram) -> HandleUdsResult {
     Ok(())
 }
 
-async fn handle_history(socket: UnixDatagram) -> HandleUdsResult {
+async fn handle_history(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
+    let should_clear = sub_matches.get_flag("clear");
+
     socket
         .send(
-            UdsMessage::Public(MessageRequest::History)
+            UdsMessage::Public(MessageRequest::History { should_clear })
                 .encode()
                 .map_err(UdsHandlerError::EncodeFailed)?
                 .as_slice(),
