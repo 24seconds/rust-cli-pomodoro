@@ -64,7 +64,7 @@ pub enum MessageRequest {
     Delete { id: u16, all: bool },
     List { show_percentage: bool },
     Test,
-    History,
+    History { should_clear: bool },
 }
 
 impl Bincodec for MessageRequest {
@@ -105,8 +105,16 @@ impl From<MessageRequest> for UserInput {
                 }
             }
             MessageRequest::Test => String::from(ActionType::Test),
-            MessageRequest::History => String::from(ActionType::History),
+            MessageRequest::History { should_clear } => {
+                if should_clear {
+                    format!("{} --clear", String::from(ActionType::History))
+                } else {
+                    String::from(ActionType::History)
+                }
+            }
         };
+
+        debug!("input: {:?}", input);
 
         UserInput {
             input,
