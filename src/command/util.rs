@@ -10,8 +10,15 @@ pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), Par
     let (work_time, break_time) = if matches.get_flag("default") {
         (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
     } else {
-        let work_time = parse_arg::<u16>(matches, "work")?;
-        let break_time = parse_arg::<u16>(matches, "break")?;
+        let work_time = match parse_arg::<u16>(matches, "work") {
+            Ok(value) => value,
+            Err(_) => DEFAULT_WORK_TIME,
+        };
+
+        let break_time = match parse_arg::<u16>(matches, "break") {
+            Ok(value) => value,
+            Err(_) => DEFAULT_BREAK_TIME,
+        };
 
         (work_time, break_time)
     };
