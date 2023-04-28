@@ -1,8 +1,6 @@
 pub(crate) mod archived_notification;
 pub(crate) mod notify;
 
-use std::sync::Arc;
-
 pub use archived_notification::*;
 pub use notify::*;
 
@@ -11,10 +9,10 @@ use clap::ArgMatches;
 use gluesql::core::data::Value;
 use gluesql::prelude::Row;
 use std::borrow::Cow;
+use std::sync::Arc;
 use tabled::Tabled;
 
-use crate::command::util::parse_arg;
-use crate::command::{DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
+use crate::command::util;
 use crate::configuration::Configuration;
 use crate::db;
 use crate::error::NotificationError;
@@ -261,25 +259,8 @@ pub fn get_new_notification(
     created_at: DateTime<Utc>,
     configuration: Arc<Configuration>,
 ) -> Result<Notification, NotificationError> {
-    let mut work_time = match configuration.get_work_time() {
-        Some(work_time) => work_time,
-        None => DEFAULT_WORK_TIME,
-    };
-
-    let mut break_time = match configuration.get_break_time() {
-        Some(break_time) => break_time,
-        None => DEFAULT_BREAK_TIME,
-    };
-
-    if matches.get_one::<String>("work").is_some() {
-        work_time =
-            parse_arg::<u16>(matches, "work").map_err(NotificationError::NewNotification)?;
-    }
-
-    if matches.get_one::<String>("break").is_some() {
-        break_time =
-            parse_arg::<u16>(matches, "break").map_err(NotificationError::NewNotification)?;
-    }
+    let (work_time, break_time) = util::parse_work_and_break_time(matches, &configuration)
+        .map_err(NotificationError::NewNotification)?;
 
     debug!("work_time: {}", work_time);
     debug!("break_time: {}", break_time);

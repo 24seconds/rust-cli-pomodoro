@@ -148,11 +148,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 util::print_start_up();
             }
         }
-        CommandType::UdsClient(matches) => {
+        CommandType::UdsClient(config, matches) => {
             debug!("CommandType::UdsClient");
             let socket = create_client_uds().await?;
 
-            handler::uds_client::handle(matches, socket).await?;
+            handler::uds_client::handle(matches, socket, &config).await?;
         }
         CommandType::AutoComplete(sub_matches) => {
             if sub_matches.contains_id("shell") {
@@ -178,12 +178,12 @@ async fn detect_command_type() -> Result<CommandType, ConfigurationError> {
     debug!("handle_uds_client_command, matches: {:?}", &matches);
 
     let command_type = match matches.subcommand().is_none() {
-        true => CommandType::StartUp(get_configuration(&matches)?),
+        true => CommandType::StartUp(get_configuration(&matches, true)?),
         false => {
             if let Some(val) = matches.subcommand_matches("completion") {
                 CommandType::AutoComplete(val.to_owned())
             } else {
-                CommandType::UdsClient(matches)
+                CommandType::UdsClient(get_configuration(&matches, false)?, matches)
             }
         }
     };

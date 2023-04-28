@@ -1,6 +1,8 @@
+use crate::configuration::Configuration;
 use crate::ipc::{Bincodec, UdsMessage};
 use clap::ArgMatches;
 use std::result;
+use std::sync::Arc;
 use tokio::net::UnixDatagram;
 
 use crate::command::action::ActionType;
@@ -13,7 +15,11 @@ pub const BUFFER_LENGTH: usize = 100_000_000;
 type HandleUdsResult = result::Result<(), UdsHandlerError>;
 
 // TODO(young): handle error properly
-pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleUdsResult {
+pub async fn handle(
+    matches: ArgMatches,
+    socket: UnixDatagram,
+    configuration: &Arc<Configuration>,
+) -> HandleUdsResult {
     let (action_type, sub_matches) = matches
         .subcommand()
         .ok_or(UdsHandlerError::NoSubcommand)
@@ -24,8 +30,8 @@ pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleUdsResul
         })?;
 
     match action_type {
-        ActionType::Create => handle_create(socket, sub_matches).await?,
-        ActionType::Queue => handle_queue(socket, sub_matches).await?,
+        ActionType::Create => handle_create(socket, sub_matches, configuration).await?,
+        ActionType::Queue => handle_queue(socket, sub_matches, configuration).await?,
         ActionType::Delete => handle_delete(socket, sub_matches).await?,
         ActionType::List => handle_list(socket, sub_matches).await?,
         ActionType::Test => handle_test(socket).await?,
@@ -38,9 +44,13 @@ pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleUdsResul
     Ok(())
 }
 
-async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
-    let (work_time, break_time) =
-        util::parse_work_and_break_time(sub_matches).map_err(UdsHandlerError::ParseError)?;
+async fn handle_create(
+    socket: UnixDatagram,
+    sub_matches: &ArgMatches,
+    configuration: &Arc<Configuration>,
+) -> HandleUdsResult {
+    let (work_time, break_time) = util::parse_work_and_break_time(sub_matches, configuration)
+        .map_err(UdsHandlerError::ParseError)?;
 
     socket
         .send(
@@ -60,9 +70,13 @@ async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> Handle
     Ok(())
 }
 
-async fn handle_queue(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
-    let (work_time, break_time) =
-        util::parse_work_and_break_time(sub_matches).map_err(UdsHandlerError::ParseError)?;
+async fn handle_queue(
+    socket: UnixDatagram,
+    sub_matches: &ArgMatches,
+    configuration: &Arc<Configuration>,
+) -> HandleUdsResult {
+    let (work_time, break_time) = util::parse_work_and_break_time(sub_matches, configuration)
+        .map_err(UdsHandlerError::ParseError)?;
 
     debug!("handle_queue");
     socket

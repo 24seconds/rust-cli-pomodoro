@@ -1,24 +1,37 @@
-use std::io::{self, Write};
-use std::str::FromStr;
-
-use crate::command::{DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
-use crate::error::ParseError;
 use clap::ArgMatches;
 use clap_complete::Shell;
+use std::io::{self, Write};
+use std::str::FromStr;
+use std::sync::Arc;
 
-pub fn parse_work_and_break_time(matches: &ArgMatches) -> Result<(u16, u16), ParseError> {
+use crate::command::{DEFAULT_BREAK_TIME, DEFAULT_WORK_TIME};
+use crate::configuration::Configuration;
+use crate::error::ParseError;
+
+pub fn parse_work_and_break_time(
+    matches: &ArgMatches,
+    configuration: &Arc<Configuration>,
+) -> Result<(u16, u16), ParseError> {
     let (work_time, break_time) = if matches.get_flag("default") {
         (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
     } else {
-        let work_time = match parse_arg::<u16>(matches, "work") {
-            Ok(value) => value,
-            Err(_) => DEFAULT_WORK_TIME,
+        let mut work_time = match configuration.get_work_time() {
+            Some(work_time) => work_time,
+            None => DEFAULT_WORK_TIME,
         };
 
-        let break_time = match parse_arg::<u16>(matches, "break") {
-            Ok(value) => value,
-            Err(_) => DEFAULT_BREAK_TIME,
+        let mut break_time = match configuration.get_break_time() {
+            Some(break_time) => break_time,
+            None => DEFAULT_BREAK_TIME,
         };
+
+        if let Ok(val) = parse_arg::<u16>(matches, "work") {
+            work_time = val;
+        };
+
+        if let Ok(val) = parse_arg::<u16>(matches, "break") {
+            break_time = val
+        }
 
         (work_time, break_time)
     };
