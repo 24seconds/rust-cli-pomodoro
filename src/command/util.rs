@@ -12,29 +12,23 @@ pub fn parse_work_and_break_time(
     matches: &ArgMatches,
     configuration: &Arc<Configuration>,
 ) -> Result<(u16, u16), ParseError> {
-    let (work_time, break_time) = if matches.get_flag("default") {
-        (DEFAULT_WORK_TIME, DEFAULT_BREAK_TIME)
-    } else {
-        let mut work_time = match configuration.get_work_time() {
-            Some(work_time) => work_time,
-            None => DEFAULT_WORK_TIME,
-        };
-
-        let mut break_time = match configuration.get_break_time() {
-            Some(break_time) => break_time,
-            None => DEFAULT_BREAK_TIME,
-        };
-
-        if let Ok(val) = parse_arg::<u16>(matches, "work") {
-            work_time = val;
-        };
-
-        if let Ok(val) = parse_arg::<u16>(matches, "break") {
-            break_time = val
-        }
-
-        (work_time, break_time)
+    let mut work_time = match configuration.get_work_time() {
+        Some(work_time) => work_time,
+        None => DEFAULT_WORK_TIME,
     };
+
+    let mut break_time = match configuration.get_break_time() {
+        Some(break_time) => break_time,
+        None => DEFAULT_BREAK_TIME,
+    };
+
+    if let Ok(val) = parse_arg::<u16>(matches, "work") {
+        work_time = val;
+    };
+
+    if let Ok(val) = parse_arg::<u16>(matches, "break") {
+        break_time = val
+    }
 
     Ok((work_time, break_time))
 }
