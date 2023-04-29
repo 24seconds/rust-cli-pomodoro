@@ -59,12 +59,25 @@ pub trait Bincodec {
 
 #[derive(bincode::Encode, bincode::Decode, PartialEq, Debug, Eq)]
 pub enum MessageRequest {
-    Create { work: u16, r#break: u16 },
-    Queue { work: u16, r#break: u16 },
-    Delete { id: u16, all: bool },
-    List { show_percentage: bool },
+    Create {
+        work: Option<u16>,
+        r#break: Option<u16>,
+    },
+    Queue {
+        work: Option<u16>,
+        r#break: Option<u16>,
+    },
+    Delete {
+        id: u16,
+        all: bool,
+    },
+    List {
+        show_percentage: bool,
+    },
     Test,
-    History { should_clear: bool },
+    History {
+        should_clear: bool,
+    },
 }
 
 impl Bincodec for MessageRequest {
@@ -75,20 +88,30 @@ impl From<MessageRequest> for UserInput {
     fn from(request: MessageRequest) -> Self {
         let input = match request {
             MessageRequest::Create { work, r#break } => {
-                format!(
-                    "{} -w {} -b {}",
-                    String::from(ActionType::Create),
-                    work,
-                    r#break
-                )
+                let mut data = format!("{} ", String::from(ActionType::Create));
+
+                if let Some(val) = work {
+                    data.push_str(&format!("-w {} ", val))
+                }
+
+                if let Some(val) = r#break {
+                    data.push_str(&format!("-b {}", val))
+                }
+
+                data
             }
             MessageRequest::Queue { work, r#break } => {
-                format!(
-                    "{} -w {} -b {}",
-                    String::from(ActionType::Queue),
-                    work,
-                    r#break
-                )
+                let mut data = format!("{} ", String::from(ActionType::Queue));
+
+                if let Some(val) = work {
+                    data.push_str(&format!("-w {} ", val))
+                }
+
+                if let Some(val) = r#break {
+                    data.push_str(&format!("-b {}", val))
+                }
+
+                data
             }
             MessageRequest::Delete { id, all } => {
                 if all {

@@ -10,27 +10,41 @@ use crate::error::ParseError;
 
 pub fn parse_work_and_break_time(
     matches: &ArgMatches,
-    configuration: &Arc<Configuration>,
-) -> Result<(u16, u16), ParseError> {
-    let mut work_time = match configuration.get_work_time() {
-        Some(work_time) => work_time,
-        None => DEFAULT_WORK_TIME,
-    };
+    configuration: Option<&Arc<Configuration>>,
+) -> Result<(Option<u16>, Option<u16>), ParseError> {
+    if let Some(conf) = configuration {
+        let mut work_time = match conf.get_work_time() {
+            Some(work_time) => work_time,
+            None => DEFAULT_WORK_TIME,
+        };
 
-    let mut break_time = match configuration.get_break_time() {
-        Some(break_time) => break_time,
-        None => DEFAULT_BREAK_TIME,
-    };
+        let mut break_time = match conf.get_break_time() {
+            Some(break_time) => break_time,
+            None => DEFAULT_BREAK_TIME,
+        };
 
-    if let Ok(val) = parse_arg::<u16>(matches, "work") {
-        work_time = val;
-    };
+        if let Ok(val) = parse_arg::<u16>(matches, "work") {
+            work_time = val;
+        };
 
-    if let Ok(val) = parse_arg::<u16>(matches, "break") {
-        break_time = val
+        if let Ok(val) = parse_arg::<u16>(matches, "break") {
+            break_time = val;
+        };
+
+        Ok((Some(work_time), Some(break_time)))
+    } else {
+        let mut work_time = None;
+        let mut break_time = None;
+
+        if let Ok(val) = parse_arg::<u16>(matches, "work") {
+            work_time = Some(val);
+        }
+
+        if let Ok(val) = parse_arg::<u16>(matches, "break") {
+            break_time = Some(val);
+        }
+        Ok((work_time, break_time))
     }
-
-    Ok((work_time, break_time))
 }
 
 pub fn parse_shell(matches: &ArgMatches) -> Option<Shell> {

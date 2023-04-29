@@ -23,7 +23,7 @@ pub const DEFAULT_BREAK_TIME: u16 = 5;
 
 pub enum CommandType {
     StartUp(Arc<Configuration>),
-    UdsClient(Arc<Configuration>, ArgMatches),
+    UdsClient(ArgMatches),
     AutoComplete(ArgMatches),
 }
 

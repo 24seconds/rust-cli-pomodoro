@@ -64,18 +64,12 @@ impl Configuration {
     }
 }
 
-pub fn get_configuration(
-    matches: &ArgMatches,
-    show_result: bool,
-) -> Result<Arc<Configuration>, ConfigurationError> {
+pub fn get_configuration(matches: &ArgMatches) -> Result<Arc<Configuration>, ConfigurationError> {
     let configuration_file_path = matches.get_one::<String>("config").map(|s| s.as_str());
 
     let (configuration, config_error) = load_configuration(configuration_file_path)?;
     let report = generate_configuration_report(&configuration, config_error);
-
-    if show_result {
-        info!("\nconfig flag result!\n{}", report);
-    }
+    info!("\nconfig flag result!\n{}", report);
 
     Ok(Arc::new(configuration))
 }

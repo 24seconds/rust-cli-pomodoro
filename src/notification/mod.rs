@@ -259,8 +259,12 @@ pub fn get_new_notification(
     created_at: DateTime<Utc>,
     configuration: Arc<Configuration>,
 ) -> Result<Notification, NotificationError> {
-    let (work_time, break_time) = util::parse_work_and_break_time(matches, &configuration)
+    let (work_time, break_time) = util::parse_work_and_break_time(matches, Some(&configuration))
         .map_err(NotificationError::NewNotification)?;
+
+    // should never panic on unwrap as parse_work_and_break_time already handles it
+    let work_time = work_time.unwrap();
+    let break_time = break_time.unwrap();
 
     debug!("work_time: {}", work_time);
     debug!("break_time: {}", break_time);
