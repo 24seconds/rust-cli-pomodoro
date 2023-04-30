@@ -49,7 +49,7 @@ pub fn generate_configuration_report(
             .update_reason(&ConfigurationError::SlackConfigNotFound),
     };
 
-    let slack_token_message = match config.get_slack_channel() {
+    let slack_token_message = match config.get_slack_token() {
         Some(_) => Report::new("O", "slack_token"),
         None => {
             Report::new("X", "slack_token").update_reason(&ConfigurationError::SlackConfigNotFound)
@@ -62,11 +62,25 @@ pub fn generate_configuration_report(
             .update_reason(&ConfigurationError::DiscordConfigNotFound),
     };
 
+    let work_time_default_value_message = match config.get_work_time() {
+        Some(_) => Report::new("O", "default_work_time"),
+        None => Report::new("X", "default_work_time")
+            .update_reason(&ConfigurationError::UnspecifiedWorkTime),
+    };
+
+    let break_time_default_value_message = match config.get_work_time() {
+        Some(_) => Report::new("O", "default_break_time"),
+        None => Report::new("X", "default_break_time")
+            .update_reason(&ConfigurationError::UnspecifiedBreakTime),
+    };
+
     Table::new(vec![
         config_err_message,
         slack_channel_message,
         slack_token_message,
         discord_webhook_url_message,
+        work_time_default_value_message,
+        break_time_default_value_message,
     ])
     .with(Style::modern())
     .to_string()
