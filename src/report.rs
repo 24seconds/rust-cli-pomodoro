@@ -68,7 +68,7 @@ pub fn generate_configuration_report(
             .update_reason(&ConfigurationError::UnspecifiedWorkTime),
     };
 
-    let break_time_default_value_message = match config.get_work_time() {
+    let break_time_default_value_message = match config.get_break_time() {
         Some(_) => Report::new("O", "default_break_time"),
         None => Report::new("X", "default_break_time")
             .update_reason(&ConfigurationError::UnspecifiedBreakTime),
