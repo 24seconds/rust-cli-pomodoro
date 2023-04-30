@@ -40,7 +40,7 @@ pub async fn handle(matches: ArgMatches, socket: UnixDatagram) -> HandleUdsResul
 
 async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
     let (work_time, break_time) =
-        util::parse_work_and_break_time(sub_matches).map_err(UdsHandlerError::ParseError)?;
+        util::parse_work_and_break_time(sub_matches, None).map_err(UdsHandlerError::ParseError)?;
 
     socket
         .send(
@@ -62,7 +62,7 @@ async fn handle_create(socket: UnixDatagram, sub_matches: &ArgMatches) -> Handle
 
 async fn handle_queue(socket: UnixDatagram, sub_matches: &ArgMatches) -> HandleUdsResult {
     let (work_time, break_time) =
-        util::parse_work_and_break_time(sub_matches).map_err(UdsHandlerError::ParseError)?;
+        util::parse_work_and_break_time(sub_matches, None).map_err(UdsHandlerError::ParseError)?;
 
     debug!("handle_queue");
     socket

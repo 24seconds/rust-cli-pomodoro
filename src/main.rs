@@ -151,7 +151,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         CommandType::UdsClient(matches) => {
             debug!("CommandType::UdsClient");
             let socket = create_client_uds().await?;
-
             handler::uds_client::handle(matches, socket).await?;
         }
         CommandType::AutoComplete(sub_matches) => {
