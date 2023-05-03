@@ -68,6 +68,8 @@ pub enum ConfigurationError {
     JsonError(SerdeJsonError),
     SlackConfigNotFound,
     DiscordConfigNotFound,
+    UnspecifiedWorkTime,
+    UnspecifiedBreakTime,
     LoadFail(io::Error),
     // config json wrong format?
 }
@@ -75,7 +77,7 @@ pub enum ConfigurationError {
 impl fmt::Display for ConfigurationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ConfigurationError::FileNotFound => write!(f, "can not find configuration file "),
+            ConfigurationError::FileNotFound => write!(f, "can not find configuration file"),
             ConfigurationError::FileOpenError(_) => write!(f, "failed to open the file"),
             ConfigurationError::JsonError(_) => write!(f, "failed to deserialize json"),
             ConfigurationError::SlackConfigNotFound => {
@@ -84,6 +86,8 @@ impl fmt::Display for ConfigurationError {
             ConfigurationError::DiscordConfigNotFound => {
                 write!(f, "can not find discord config in json")
             }
+            ConfigurationError::UnspecifiedWorkTime => write!(f, "not specified"),
+            ConfigurationError::UnspecifiedBreakTime => write!(f, "not specified"),
             ConfigurationError::LoadFail(e) => write!(f, "failed to load: {}", e),
         }
     }
@@ -97,6 +101,8 @@ impl std::error::Error for ConfigurationError {
             ConfigurationError::JsonError(ref e) => Some(e),
             ConfigurationError::SlackConfigNotFound => None,
             ConfigurationError::DiscordConfigNotFound => None,
+            ConfigurationError::UnspecifiedWorkTime => None,
+            ConfigurationError::UnspecifiedBreakTime => None,
             ConfigurationError::LoadFail(ref e) => Some(e),
         }
     }
