@@ -7,7 +7,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::Duration;
 use tokio::net::UnixDatagram;
-use tokio::time::{timeout, sleep};
+use tokio::time::{sleep, timeout};
 
 use crate::command::action::ActionType;
 use crate::InputSource;
@@ -339,7 +339,7 @@ pub async fn send_to(socket: &UnixDatagram, target: PathBuf, buf: &[u8]) {
         debug!("buf length to be sent: {}", buf.len());
         socket.send_to(buf, &target).await.unwrap();
 
-        // Wait for certain time due to 
+        // Wait for certain time due to
         // "No buffer space available" error in mac os.
         #[cfg(target_os = "macos")]
         sleep(tokio::time::Duration::from_millis(1)).await;
