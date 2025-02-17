@@ -175,7 +175,7 @@ impl Tabled for Notification {
                 let work_min = sec / 60;
                 let work_sec = sec - work_min * 60;
 
-                format!("{}:{}", work_min, work_sec)
+                format!("{}:{:02}", work_min, work_sec)
             } else {
                 String::from("00:00")
             }
@@ -190,7 +190,7 @@ impl Tabled for Notification {
                 let break_min = sec / 60;
                 let break_sec = sec - break_min * 60;
 
-                format!("{}:{}", break_min, break_sec)
+                format!("{}:{:02}", break_min, break_sec)
             } else {
                 String::from("00:00")
             }
