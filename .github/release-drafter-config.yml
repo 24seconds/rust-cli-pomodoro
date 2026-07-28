@@ -1,0 +1,30 @@
+name-template: 'v${major}.${minor}.${patch}'
+tag-template: 'v${major}.${minor}.${patch}'
+title-template: 'Release v${major}.${minor}.${patch}'
+
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bug'
+      - 'fix'
+  - title: '📚 Documentation'
+    labels:
+      - 'documentation'
+      - 'docs'
+  - title: '⚙️ Maintenance'
+    labels:
+      - 'chore'
+      - 'refactor'
+      - 'dependencies'
+
+template: |
+  ## What's Changed
+
+  ${categories}
+
+  ---
+  Full changelog: https://github.com/24seconds/rust-cli-pomodoro/commits/${last_tag}...${next_tag}
